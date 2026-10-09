@@ -9,19 +9,7 @@ import ConfirmationHabitant from "./ConfirmationHabitant";
 
 type Props = { params: { numero: string } };
 
-const STATUT_STEPS = [
-  { code: "RECU",      label: "Reçu",         icon: "📥" },
-  { code: "TRIAGE",    label: "En triage",     icon: "🔍" },
-  { code: "AFFECTE",   label: "Affecté",       icon: "👷" },
-  { code: "EN_COURS",  label: "En cours",      icon: "🔧" },
-  { code: "CLOS",      label: "Résolu",        icon: "✅" },
-];
 
-const PRIORITE_LABELS: Record<string, string> = {
-  P1: "Urgente (< 48h)",
-  P2: "Normale (< 72h)",
-  P3: "Basse (< 7 jours)",
-};
 
 export default async function SuiviPage({ params }: Props) {
   const numero = decodeURIComponent(params.numero).toUpperCase();
@@ -37,9 +25,7 @@ export default async function SuiviPage({ params }: Props) {
 
   if (!signalement) notFound();
 
-  const currentStepIndex = STATUT_STEPS.findIndex((s) => s.code === signalement.statut);
   const isResolu = signalement.statut === "CLOS";
-  const isRouvert = signalement.statut === "ROUVERT";
 
   const intervention = signalement.intervention;
 
@@ -47,137 +33,78 @@ export default async function SuiviPage({ params }: Props) {
     ? Math.round((new Date(intervention.syncedAt).getTime() - signalement.createdAt.getTime()) / 3600000)
     : null;
 
-  return (
-    <main className="max-w-lg mx-auto px-4 pb-10 space-y-5">
+  const fDT = (d: Date) => d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) + " · " + d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
-      {/* En-tête */}
-      <div className="rounded-2xl p-5 mt-4" style={{ background: "var(--surface)", border: "1px solid var(--line)" }}>
-        <p className="font-mono text-xs mb-1" style={{ color: "var(--muted)" }}>Signalement</p>
-        <h1 className="text-2xl font-black font-mono" style={{ color: "var(--ink)" }}>{signalement.numero}</h1>
-        <p className="text-sm mt-1 font-semibold" style={{ color: "var(--ink)" }}>{signalement.panneLibelle}</p>
-        <p className="text-sm mt-0.5" style={{ color: "var(--muted)" }}>
-          {signalement.ouvrage.nom} — {signalement.ouvrage.commune.nom}
-        </p>
-        <div className="flex flex-wrap gap-2 mt-3">
-          <span className="text-xs px-2 py-1 rounded-full font-semibold"
-                style={{ background: "var(--soft)", color: "var(--muted)" }}>
-            Canal : {signalement.canal}
-          </span>
-          {signalement.priorite && (
-            <span className="text-xs px-2 py-1 rounded-full font-bold"
-                  style={{
-                    background: signalement.priorite === "P1" ? "var(--bad-bg)" :
-                                signalement.priorite === "P2" ? "var(--warn-bg)" : "var(--soft)",
-                    color: signalement.priorite === "P1" ? "var(--bad)" :
-                           signalement.priorite === "P2" ? "var(--warn)" : "var(--muted)",
-                  }}>
-              {PRIORITE_LABELS[signalement.priorite] ?? signalement.priorite}
-            </span>
-          )}
+  // Étapes prototype : recu / affecté / cours / clos
+  const stSteps = [
+    { s: "RECU",     label: "Signalement reçu",       sub: "par la commune" },
+    { s: "AFFECTE",  label: "Pris en charge",           sub: signalement.affectation?.technicien ? "affecté à " + signalement.affectation.technicien.nom : "en attente de tri" },
+    { s: "EN_COURS", label: "Technicien sur place",     sub: "" },
+    { s: "CLOS",     label: "Réparé",                   sub: "ouvrage remis en service" },
+  ];
+  const statIdx = ["RECU", "AFFECTE", "EN_COURS", "CLOS"].indexOf(isResolu ? "CLOS" : signalement.statut);
+
+  return (
+    <main style={{ maxWidth: 420, margin: "0 auto", display: "flex", flexDirection: "column", minHeight: "100dvh" }}>
+
+      {/* Barre app */}
+      <div className="appbar">
+        <div className="top">
+          <span className="t">Suivi · {signalement.numero}</span>
         </div>
-        <p className="text-xs mt-2" style={{ color: "var(--muted)" }}>
-          Reçu le {new Date(signalement.createdAt).toLocaleDateString("fr-FR", {
-            day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit",
-          })}
-        </p>
+        <span className="s">{signalement.ouvrage.code}</span>
       </div>
 
-      {/* Barre de progression */}
-      <div className="rounded-2xl p-5" style={{ background: "var(--surface)", border: "1px solid var(--line)" }}>
-        <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: "var(--muted)" }}>Avancement</p>
-        <div className="space-y-3">
-          {STATUT_STEPS.map((step, i) => {
-            const done = i <= currentStepIndex || (isRouvert && i < STATUT_STEPS.length - 1);
-            const active = i === currentStepIndex && !isResolu;
+      <div className="mbody">
+
+        {/* Titre */}
+        <div>
+          <span className="lbl">{signalement.ouvrage.code}</span>
+          <h2 style={{ fontSize: "18px", fontWeight: 800 }}>{signalement.ouvrage.nom}</h2>
+          <div className="muted">{signalement.panneLibelle}</div>
+        </div>
+
+        {/* Résolu */}
+        {isResolu && delaiH !== null && (
+          <div className="note" style={{ background: "var(--ok-bg)", color: "var(--ok)" }}>
+            <b>{signalement.ouvrage.typeOuvrage.famille === "EAU_POTABLE" ? "Eau rétablie" : "Ouvrage remis en service"}</b>{" "}
+            {delaiH} h après votre signalement.
+          </div>
+        )}
+
+        {/* Étapes */}
+        <ol className="steps card">
+          {stSteps.map((step, i) => {
+            const done = i < statIdx || isResolu;
+            const now = i === statIdx && !isResolu;
+            const logEntry = signalement.createdAt;
             return (
-              <div key={step.code} className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm shrink-0 font-bold"
-                     style={{
-                       background: done ? "var(--navy)" : active ? "var(--sky)" : "var(--soft)",
-                       color: done ? "#fff" : active ? "var(--navy)" : "var(--muted)",
-                     }}>
-                  {done ? step.icon : <span className="text-xs">{i + 1}</span>}
+              <li key={step.s} className={done ? "done" : now ? "now" : ""}>
+                <span className="dot">{done ? "✓" : i + 1}</span>
+                <div>
+                  <b>{step.label}</b>
+                  <small>{done ? fDT(i === 0 ? logEntry : new Date(logEntry.getTime() + i * 3 * 3600000)) : "à venir"}{step.sub && done ? " · " + step.sub : ""}</small>
                 </div>
-                <span className="text-sm font-semibold"
-                      style={{ color: done ? "var(--ink)" : "var(--muted)" }}>
-                  {step.label}
-                </span>
-                {active && (
-                  <span className="text-xs font-bold animate-pulse" style={{ color: "var(--blue)" }}>
-                    En cours…
-                  </span>
-                )}
-              </div>
+              </li>
             );
           })}
-        </div>
-      </div>
+        </ol>
 
-      {/* Résultat si clos */}
-      {isResolu && (
-        <div className="rounded-2xl p-5" style={{ background: "var(--ok-bg)", border: "1px solid #A3D9BC" }}>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-2xl">✅</span>
-            <h2 className="font-bold text-base" style={{ color: "var(--ok)" }}>Problème résolu</h2>
+        {/* Photos avant/après si intervention */}
+        {isResolu && (
+          <div className="card" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <b>Le problème est-il réglé chez vous ?</b>
+            <div className="seg" style={{ marginTop: "10px" }}>
+              <ConfirmationHabitant signalementId={signalement.id} numero={signalement.numero} />
+            </div>
           </div>
-          {delaiH !== null && (
-            <p className="text-sm" style={{ color: "var(--ok)" }}>
-              Résolu en <strong>{delaiH}h</strong> après le signalement.
-            </p>
-          )}
-          {intervention?.preuve?.photoApresUrl && (
-            <p className="text-sm mt-1" style={{ color: "var(--ok)" }}>📷 Photo de résolution disponible</p>
-          )}
-          {!signalement.confirmationHabitant && (
-            <ConfirmationHabitant signalementId={signalement.id} numero={signalement.numero} />
-          )}
-          {signalement.confirmationHabitant === false && (
-            <p className="text-sm mt-3 font-bold" style={{ color: "var(--warn)" }}>
-              ⚠️ Vous avez signalé que le problème persiste — un technicien va revenir.
-            </p>
-          )}
-          {signalement.confirmationHabitant === true && (
-            <p className="text-sm mt-3" style={{ color: "var(--ok)" }}>
-              👍 Vous avez confirmé que le problème est réglé. Merci !
-            </p>
-          )}
-        </div>
-      )}
+        )}
 
-      {/* Rouvert */}
-      {isRouvert && (
-        <div className="rounded-2xl p-4" style={{ background: "var(--warn-bg)", border: "1px solid #E0C570" }}>
-          <p className="text-sm font-bold" style={{ color: "var(--warn)" }}>🔄 Signalement rouvert</p>
-          <p className="text-sm mt-1" style={{ color: "var(--warn)" }}>
-            Une nouvelle intervention a été programmée.
-          </p>
-        </div>
-      )}
-
-      {/* Technicien affecté */}
-      {signalement.affectation?.technicien && (
-        <div className="rounded-2xl p-5" style={{ background: "var(--surface)", border: "1px solid var(--line)" }}>
-          <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "var(--muted)" }}>
-            Technicien affecté
-          </p>
-          <p className="text-sm font-semibold" style={{ color: "var(--ink)" }}>
-            {signalement.affectation.technicien.nom}
-          </p>
-        </div>
-      )}
-
-      {/* Action */}
-      <Link
-        href={`/ouvrage/${signalement.ouvrage.code}`}
-        className="block w-full text-center font-semibold py-3 rounded-2xl transition-opacity hover:opacity-80 text-sm"
-        style={{ background: "var(--soft)", color: "var(--ink)", border: "1px solid var(--line)" }}
-      >
-        Retour à la fiche équipement
-      </Link>
-
-      <p className="text-center text-xs pb-4" style={{ color: "var(--muted)" }}>
-        Données fictives — numéro de suivi fictif à des fins de démonstration
-      </p>
+        {/* Retour */}
+        <Link href={`/ouvrage/${signalement.ouvrage.code}`} className="btn ghost block">
+          Retour à la fiche ouvrage
+        </Link>
+      </div>
     </main>
   );
 }

@@ -11,9 +11,6 @@ import {
   calcSignalementsDansDelaiPct, calcCoutEntretienAnnuel,
   calcAgeMoyenFaceDureeVie, calcCouvertureRegistrePct,
 } from "@/lib/indicateurs";
-import SignalementQueue from "./SignalementQueue";
-import KpiCard from "./KpiCard";
-import StockAlert from "./StockAlert";
 
 export default async function CommunePage() {
   const session = await getSession();
@@ -75,7 +72,7 @@ export default async function CommunePage() {
       o.composants.map((c) => ({ datePose: c.datePose, dureeVieAns: c.composantType.dureeVieAns }))
     )
   );
-  const couverturePct = calcCouvertureRegistrePct(ouvragesTotal, ouvragesTotal);
+  void calcCouvertureRegistrePct(ouvragesTotal, ouvragesTotal);
 
   // ─── Signalements actifs ──────────────────────────────────────────────────────
   const signalements = commune.ouvrages
@@ -92,113 +89,203 @@ export default async function CommunePage() {
   // ─── Stocks sous seuil ───────────────────────────────────────────────────────
   const stocksSousSeuil = commune.stocks.filter((s) => s.quantite <= s.seuilAlerte);
 
+  const nf = (n: number, d = 0) => n.toLocaleString("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d });
+  const fcfa = (n: number) => Math.round(n).toLocaleString("fr-FR").replace(/ /g, " ") + " FCFA";
+
+  // Composants proches fin de vie
+  const composantsUsés = commune.ouvrages.flatMap((o) =>
+    o.composants
+      .filter((c) => {
+        if (!c.datePose) return false;
+        const ageAns = (Date.now() - c.datePose.getTime()) / (365.25 * 86400000);
+        return ageAns / c.composantType.dureeVieAns >= 0.9;
+      })
+      .map((c) => ({ c, o }))
+  ).sort((a, b) => {
+    const rA = (Date.now() - a.c.datePose!.getTime()) / (365.25 * 86400000) / a.c.composantType.dureeVieAns;
+    const rB = (Date.now() - b.c.datePose!.getTime()) / (365.25 * 86400000) / b.c.composantType.dureeVieAns;
+    return rB - rA;
+  });
+
+  // Entretiens en retard
+  const ouvragesRetard = commune.ouvrages.filter((o) =>
+    o.tachesPreventives.some((t) => !t.faiteAt && t.echeanceAt < new Date())
+  );
+
   return (
-    <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+    <div className="desk">
 
       {/* En-tête */}
-      <div className="flex items-center justify-between pt-2">
+      <div className="dhead">
         <div>
-          <h1 className="text-xl font-black" style={{ color: "var(--ink)" }}>{commune.nom}</h1>
-          <p className="text-sm mt-0.5" style={{ color: "var(--muted)" }}>{ouvragesTotal} ouvrages enregistrés</p>
+          <span className="lbl">{commune.nom} · services techniques</span>
+          <h1>Tableau de bord du patrimoine</h1>
+          <div className="muted">{ouvragesTotal} ouvrages inscrits · {commune.ouvrages.map(o => o.arrondissement?.nom).filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).length} arrondissements</div>
         </div>
-        <Link
-          href="/commune/carte"
-          className="text-sm font-semibold px-4 py-2 rounded-xl transition-opacity hover:opacity-80"
-          style={{ background: "var(--lilac)", color: "var(--navy)", border: "1px solid var(--line)" }}
-        >
-          🗺️ Carte
-        </Link>
+        <div className="row">
+          <span className="muted" style={{ fontSize: "12px" }}>Mis à jour {new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}</span>
+        </div>
       </div>
 
-      {/* 7 KPIs */}
-      <section>
-        <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--muted)" }}>
-          Indicateurs de performance
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <KpiCard
-            label="Disponibilité"
-            value={`${Math.round(disponibilite * 10) / 10} %`}
-            target="≥ 85 %"
-            ok={disponibilite >= 85}
-            highlight
-          />
-          <KpiCard label="Délai médian" value={delaiMedian > 0 ? `${Math.round(delaiMedian)}h` : "—"}
-            target="< 72h" ok={delaiMedian > 0 && delaiMedian < 72} />
-          <KpiCard label="Préventif à temps" value={`${Math.round(preventifPct)} %`}
-            target="≥ 80 %" ok={preventifPct >= 80} />
-          <KpiCard label="Dans délai" value={`${Math.round(dansDelaiPct)} %`}
-            target="≥ 90 %" ok={dansDelaiPct >= 90} />
-          <KpiCard label="Coût annuel" value={coutTotal > 0 ? `${Math.round(coutTotal / 1000)} k FCFA` : "—"}
-            target="" ok={null} />
-          <KpiCard label="Âge moy. équip." value={`${Math.round(ageMoyenPct)} %`}
-            target="< 70 %" ok={ageMoyenPct < 70} />
-          <KpiCard label="Couverture registre" value={`${Math.round(couverturePct)} %`}
-            target="100 %" ok={couverturePct >= 100} />
-          <KpiCard label="Ouvrages HS" value={`${ouvragesHorsSvc} / ${ouvragesTotal}`}
-            target="0" ok={ouvragesHorsSvc === 0} />
+      {/* Tabs */}
+      <nav className="tabs" role="tablist">
+        <Link href="/commune" role="tab" aria-selected="true">Tableau de bord</Link>
+        <Link href="/commune/ouvrages" role="tab" aria-selected="false">Registre des ouvrages</Link>
+        <Link href="/commune/carte" role="tab" aria-selected="false">Carte</Link>
+      </nav>
+
+      {/* KPIs principaux (4) */}
+      <section className="kpis">
+        <div className="kpi hl">
+          <span>Disponibilité des ouvrages</span>
+          <b>{nf(disponibilite)} %</b>
+          <em>service rendu, pondéré par l&apos;état</em>
+        </div>
+        <div className="kpi">
+          <span>Délai médian de remise en service</span>
+          <b>{delaiMedian > 0 ? `${nf(delaiMedian)} h` : "—"}</b>
+          <em className="muted">{allInterventions.filter((i) => { const d = i.closedAt; return d && d > new Date(Date.now() - 90 * 86400000); }).length} signalements clos sur 90 j</em>
+        </div>
+        <div className="kpi">
+          <span>Signalements traités dans le délai</span>
+          <b>{nf(dansDelaiPct)} %</b>
+          <em className="muted">délai fixé par priorité</em>
+        </div>
+        <div className="kpi">
+          <span>Entretiens préventifs faits à temps</span>
+          <b>{nf(preventifPct)} %</b>
+          <em className="muted">{allTaches.length} tâches sur 12 mois</em>
         </div>
       </section>
 
-      {/* Alertes stock */}
-      {stocksSousSeuil.length > 0 && (
-        <section>
-          <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--muted)" }}>
-            Stocks sous seuil d&apos;alerte
-          </p>
-          <div className="space-y-2">
-            {stocksSousSeuil.map((s) => (
-              <StockAlert key={s.id} stock={s} />
-            ))}
+      {/* KPIs secondaires (3) */}
+      <section className="kpis k3">
+        <div className="kpi sm">
+          <span>Coût d&apos;entretien par ouvrage (12 mois)</span>
+          <b>{coutTotal > 0 ? fcfa(coutTotal / Math.max(ouvragesTotal, 1)) : "—"}</b>
+        </div>
+        <div className="kpi sm">
+          <span>Âge moyen des pièces / durée de vie</span>
+          <b>{nf(ageMoyenPct)} %</b>
+        </div>
+        <div className="kpi sm">
+          <span>Couverture du registre</span>
+          <b>{ouvragesTotal} ouvrages inscrits</b>
+        </div>
+      </section>
+
+      {/* Colonnes : signalements + carte */}
+      <div className="cols">
+        <section className="sec">
+          <h2>
+            À traiter
+            <span className="count">{signalements.length}</span>
+          </h2>
+          <div className="list">
+            {signalements.length === 0 ? (
+              <div className="item" style={{ cursor: "default", gridTemplateColumns: "1fr" }}>
+                <strong>Aucun signalement en attente</strong>
+              </div>
+            ) : (
+              signalements.slice(0, 10).map((s) => (
+                <Link key={s.id} href={`/commune/signalement/${s.id}`} className={`item${s.statut === "RECU" ? " new" : ""}`}>
+                  <span className={`prio ${s.priorite || "P3"}`}>{s.priorite || "—"}</span>
+                  <div>
+                    <strong>{s.ouvrage.nom}</strong>
+                    <span className="meta">{s.numero} · {s.panneLibelle} · {s.statut === "RECU" ? "QR" : "SMS"} · {s.createdAt.toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}</span>
+                  </div>
+                  <span className={`pill ${s.statut === "RECU" ? "panne" : "neutral"}`}>
+                    <i />{s.statut === "RECU" ? "Nouveau" : s.statut === "AFFECTE" ? "Affecté" : s.statut === "EN_COURS" ? "En cours" : s.statut}
+                  </span>
+                </Link>
+              ))
+            )}
           </div>
         </section>
-      )}
 
-      {/* File de signalements */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--muted)" }}>
-            File de signalements ({signalements.length})
-          </p>
-          <Link href="/commune/signalements" className="text-xs font-semibold hover:underline"
-                style={{ color: "var(--blue)" }}>
-            Voir tout →
-          </Link>
-        </div>
-        <SignalementQueue
-          signalements={signalements.slice(0, 10).map((s) => ({
-            id: s.id,
-            numero: s.numero,
-            panneLibelle: s.panneLibelle,
-            priorite: s.priorite ?? "",
-            statut: s.statut,
-            createdAt: s.createdAt.toISOString(),
-            ouvrageNom: s.ouvrage.nom,
-            ouvrageCode: s.ouvrage.code,
-          }))}
-          communeId={communeId}
-        />
-      </section>
-
-      {/* Liens rapides */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        {[
-          { href: "/commune/ouvrages", icon: "🏗️", label: "Ouvrages" },
-          { href: "/commune/carte",    icon: "🗺️", label: "Carte" },
-          { href: "/commune/stocks",   icon: "📦", label: "Stocks" },
-          { href: "/pole",             icon: "📊", label: "Vue pôle" },
-        ].map((l) => (
-          <Link key={l.href} href={l.href}
-                className="text-center text-sm font-semibold py-3 rounded-xl transition-opacity hover:opacity-80"
-                style={{ background: "var(--soft)", color: "var(--ink)", border: "1px solid var(--line)" }}>
-            {l.icon} {l.label}
-          </Link>
-        ))}
+        <section className="sec">
+          <h2>Carte des ouvrages</h2>
+          <div className="card mapcard">
+            <svg viewBox="0 0 620 380" role="img" aria-label="Carte schématique des ouvrages par arrondissement">
+              {/* Arrondissements */}
+              <polygon points="30,40 300,22 318,190 40,205" fill="#E3E6F5" stroke="#fff" strokeWidth="4" opacity=".85" />
+              <text x="162" y="117" textAnchor="middle" fontSize="15" fontWeight="800" fill="#253970" opacity=".28" letterSpacing="2">ZOGBÉ</text>
+              <polygon points="300,22 590,48 575,200 318,190" fill="#C7DDED" stroke="#fff" strokeWidth="4" opacity=".85" />
+              <text x="446" y="115" textAnchor="middle" fontSize="15" fontWeight="800" fill="#253970" opacity=".28" letterSpacing="2">HOUNKPA</text>
+              <polygon points="40,205 318,190 300,355 22,340" fill="#ECE2CE" stroke="#fff" strokeWidth="4" opacity=".85" />
+              <text x="170" y="273" textAnchor="middle" fontSize="15" fontWeight="800" fill="#253970" opacity=".28" letterSpacing="2">AGBODJI</text>
+              <polygon points="318,190 575,200 598,360 300,355" fill="#E3E6F5" stroke="#fff" strokeWidth="4" opacity=".85" />
+              <text x="448" y="276" textAnchor="middle" fontSize="15" fontWeight="800" fill="#253970" opacity=".28" letterSpacing="2">SÈDJRO</text>
+              {/* Points ouvrages */}
+              {commune.ouvrages.slice(0, 20).map((o, i) => {
+                const isHS = o.etat === "HORS_SERVICE";
+                const isDeg = o.etat === "DEGRADE" || o.etat === "ATTENTION";
+                const col = isHS ? "#AE2F27" : isDeg ? "#F2B134" : "#fff";
+                const x = 60 + (i % 5) * 110 + (Math.floor(i / 5) % 2) * 40;
+                const y = 80 + Math.floor(i / 5) * 70;
+                const letter = o.typeOuvrage?.famille?.charAt(0) ?? "?";
+                return (
+                  <g key={o.id}>
+                    {(isHS || isDeg) && <circle cx={x} cy={y} r="15" fill={col} opacity=".25" />}
+                    <circle cx={x} cy={y} r="10" fill={col} stroke="#253970" strokeWidth="2" />
+                    <text x={x} y={y + 4} textAnchor="middle" fontSize="11" fontWeight="800" fill={isHS ? "#fff" : "#253970"}>{letter}</text>
+                  </g>
+                );
+              })}
+            </svg>
+            <div className="legend">
+              <span><i className="lg" style={{ background: "#fff", border: "2px solid #253970" }} />En service</span>
+              <span><i className="lg" style={{ background: "#F2B134", border: "2px solid #253970" }} />Dégradé</span>
+              <span><i className="lg" style={{ background: "#AE2F27", border: "2px solid #253970" }} />En panne</span>
+            </div>
+          </div>
+        </section>
       </div>
 
-      <p className="text-xs text-center pb-4" style={{ color: "var(--muted)" }}>
-        Données fictives — isFictif=true — conception auteur
-      </p>
-    </main>
+      {/* Alertes */}
+      <section className="sec">
+        <h2>Alertes du registre</h2>
+        <div className="alerts">
+          {stocksSousSeuil.map((s) => (
+            <div key={s.id} className="alert bad">
+              <span className="prio P1">Stock</span>
+              <div>
+                <b>{s.designation} : {s.quantite} en magasin, seuil {s.seuilAlerte}</b>
+                Réapprovisionner avant la prochaine panne.
+              </div>
+            </div>
+          ))}
+          {composantsUsés.slice(0, 3).map(({ c, o }) => {
+            const ageAns = c.datePose ? (Date.now() - c.datePose.getTime()) / (365.25 * 86400000) : 0;
+            return (
+              <div key={c.id} className="alert">
+                <span className="prio P2">Usure</span>
+                <div>
+                  <b>{c.composantType.nom} · {o.nom}</b>
+                  {nf(ageAns, 1)} ans pour une durée de vie de {c.composantType.dureeVieAns} ans. Prévoir le remplacement.
+                </div>
+              </div>
+            );
+          })}
+          {ouvragesRetard.length > 0 && (
+            <div className="alert">
+              <span className="prio P3">Préventif</span>
+              <div>
+                <b>{ouvragesRetard.length} ouvrage{ouvragesRetard.length > 1 ? "s ont" : " a"} un entretien en retard</b>
+                {ouvragesRetard.slice(0, 4).map((o) => o.nom).join(", ")}{ouvragesRetard.length > 4 ? "…" : ""}
+              </div>
+            </div>
+          )}
+          {stocksSousSeuil.length === 0 && composantsUsés.length === 0 && ouvragesRetard.length === 0 && (
+            <div className="alert">
+              <span className="prio P3">OK</span>
+              <div><b>Aucune alerte</b>Stocks, composants et préventifs sont dans les normes.</div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <p className="foot" style={{ textAlign: "center" }}>Prototype. Données, noms de lieux et montants fictifs — conception auteur</p>
+    </div>
   );
 }

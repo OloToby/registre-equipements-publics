@@ -1,8 +1,9 @@
 // Formulaire d'intervention terrain — technicien
-// Source : Deck 3 slides 9-10 (checklist, photos, double horodatage)
-// Conception auteur : checklist dynamique, consignation électrique bloquante, sync hors-ligne
+// Source : Deck 3 slides 9-10 (t-int), programme p. 38
+// Conception auteur : appbar + mbody, checklist, photos, double horodatage, sync hors-ligne
 
 import { notFound, redirect } from "next/navigation";
+import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import InterventionForm from "./InterventionForm";
@@ -46,27 +47,47 @@ export default async function InterventionPage({ params }: Props) {
     typeIntervention: item.typeIntervention,
   }));
 
+  const slaH = signalement.priorite === "P1" ? 48 : signalement.priorite === "P2" ? 120 : 360;
+  const leftH = Math.max(0, Math.round(slaH - (Date.now() - signalement.createdAt.getTime()) / 3600000));
+
   return (
-    <main className="max-w-lg mx-auto px-4 py-6 space-y-5">
-      {/* En-tête */}
-      <div>
-        <p className="text-xs font-mono" style={{ color: "var(--muted)" }}>{signalement.numero}</p>
-        <h1 className="text-xl font-bold mt-0.5" style={{ color: "var(--navy)" }}>{signalement.panneLibelle}</h1>
-        <p className="text-sm" style={{ color: "var(--ink)" }}>{signalement.ouvrage.nom}</p>
-        <p className="text-xs" style={{ color: "var(--muted)" }}>{signalement.ouvrage.commune.nom}</p>
-        {signalement.priorite === "P1" && (
-          <span className="inline-block mt-2 text-xs font-bold px-2 py-0.5 rounded-full" style={{ color: "var(--bad)", background: "var(--bad-bg)", border: "1px solid #EBADA8" }}>
-            ⚡ PRIORITÉ 1 — Intervention sous 48h
-          </span>
-        )}
+    <main style={{ maxWidth: 420, margin: "0 auto", display: "flex", flexDirection: "column", minHeight: "100dvh" }}>
+
+      {/* Barre app */}
+      <div className="appbar">
+        <div className="top">
+          <Link href="/technicien" className="t" style={{ fontSize: "14px", fontWeight: 600, color: "var(--blue)" }}>
+            ← Interventions
+          </Link>
+          {signalement.priorite && (
+            <span className={`prio ${signalement.priorite}`}>{signalement.priorite}</span>
+          )}
+        </div>
+        <span className="s">{signalement.ouvrage.nom} · {signalement.numero}</span>
       </div>
 
-      <InterventionForm
-        signalementId={signalement.id}
-        ouvrageId={signalement.ouvrageId}
-        checklistItems={checklistItems}
-        technicienId={session.id}
-      />
+      <div className="mbody">
+        {/* Infos signalement */}
+        <div className="card">
+          <div style={{ fontWeight: 700, fontSize: "15px", color: "var(--ink)" }}>{signalement.panneLibelle}</div>
+          <div className="muted" style={{ marginTop: "4px" }}>
+            {signalement.ouvrage.commune.nom}
+            {signalement.priorite && leftH < 24 && (
+              <span style={{ color: "var(--bad)", fontWeight: 700, marginLeft: "8px" }}>reste {leftH} h</span>
+            )}
+          </div>
+          {signalement.description && (
+            <div style={{ marginTop: "8px", fontSize: "13px", color: "var(--ink)" }}>{signalement.description}</div>
+          )}
+        </div>
+
+        <InterventionForm
+          signalementId={signalement.id}
+          ouvrageId={signalement.ouvrageId}
+          checklistItems={checklistItems}
+          technicienId={session.id}
+        />
+      </div>
     </main>
   );
 }
