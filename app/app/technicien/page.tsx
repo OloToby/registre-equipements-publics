@@ -2,7 +2,6 @@
 // Source : Deck 3 slide 9 (technicien terrain), programme p. 38 (mode déconnecté)
 // Conception auteur : liste des signalements affectés, indicateur hors-ligne, sync
 
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/db";

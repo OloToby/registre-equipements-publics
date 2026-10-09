@@ -8,10 +8,9 @@ import { useRouter } from "next/navigation";
 
 export default function ConfirmationHabitant({
   signalementId,
-  numero,
 }: {
   signalementId: string;
-  numero: string;
+  numero?: string;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
