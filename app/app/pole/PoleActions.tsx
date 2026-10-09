@@ -89,13 +89,15 @@ export default function PoleActions({ tableau, poleNom, poleCode }: Props) {
       <div className="flex flex-wrap gap-2">
         <button
           onClick={exportCsv}
-          className="text-xs bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg transition-colors"
+          className="text-xs text-white px-4 py-2 rounded-lg transition-opacity hover:opacity-80"
+          style={{ background: "var(--navy)" }}
         >
           ⬇ Export CSV
         </button>
         <button
           onClick={exportJson}
-          className="text-xs bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg transition-colors"
+          className="text-xs text-white px-4 py-2 rounded-lg transition-opacity hover:opacity-80"
+          style={{ background: "var(--navy)" }}
         >
           ⬇ Export JSON
         </button>
@@ -103,7 +105,8 @@ export default function PoleActions({ tableau, poleNom, poleCode }: Props) {
       <button
         onClick={rejouerScenario}
         disabled={resetting}
-        className="text-xs bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white px-4 py-2 rounded-lg transition-colors"
+        className="text-xs text-white px-4 py-2 rounded-lg transition-opacity hover:opacity-80 disabled:opacity-50"
+        style={{ background: "var(--blue)" }}
       >
         {resetting ? "Réinitialisation…" : resetDone ? "✅ Scénario réinitialisé" : "🔄 Rejouer le scénario"}
       </button>

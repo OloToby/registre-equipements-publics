@@ -57,26 +57,29 @@ export default function OfflineBanner() {
 
   if (isOnline && pendingCount === 0) return null;
 
+  const bg = isOnline ? "var(--sky)" : "var(--warn-bg)";
+  const borderColor = isOnline ? "#8BBDD9" : "#E0C570";
+  const textColor = isOnline ? "var(--navy)" : "var(--warn)";
+
   return (
-    <div className={`rounded-xl px-4 py-3 flex items-center justify-between gap-3 ${
-      isOnline ? "bg-blue-50 border border-blue-200" : "bg-amber-50 border border-amber-300"
-    }`}>
+    <div className="rounded-xl px-4 py-3 flex items-center justify-between gap-3" style={{ background: bg, border: `1px solid ${borderColor}` }}>
       <div>
-        <p className={`text-sm font-semibold ${isOnline ? "text-blue-800" : "text-amber-800"}`}>
+        <p className="text-sm font-semibold" style={{ color: textColor }}>
           {isOnline ? "🌐 En ligne" : "📴 Hors connexion"}
         </p>
         {pendingCount > 0 && (
-          <p className={`text-xs mt-0.5 ${isOnline ? "text-blue-600" : "text-amber-700"}`}>
+          <p className="text-xs mt-0.5" style={{ color: textColor }}>
             {pendingCount} intervention{pendingCount > 1 ? "s" : ""} en attente de synchronisation
           </p>
         )}
-        {lastSync && <p className="text-xs text-gray-500 mt-0.5">{lastSync}</p>}
+        {lastSync && <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>{lastSync}</p>}
       </div>
       {isOnline && pendingCount > 0 && (
         <button
           onClick={handleSync}
           disabled={syncing}
-          className="text-xs bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg transition-colors"
+          className="text-xs disabled:opacity-50 text-white px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80"
+          style={{ background: "var(--navy)" }}
         >
           {syncing ? "Sync…" : "Synchroniser"}
         </button>

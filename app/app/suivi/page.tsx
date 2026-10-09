@@ -10,18 +10,20 @@ export default function SuiviRedirectPage({
   if (numero) redirect(`/suivi/${encodeURIComponent(numero.toUpperCase())}`);
   return (
     <main className="max-w-lg mx-auto px-4 py-12 text-center">
-      <h1 className="text-xl font-bold text-gray-900 mb-4">Suivre un signalement</h1>
+      <h1 className="text-xl font-bold mb-4" style={{ color: "var(--navy)" }}>Suivre un signalement</h1>
       <form action="/suivi" method="get" className="flex gap-2 max-w-xs mx-auto">
         <input
           name="numero"
           type="text"
           placeholder="S-2026-0142"
           autoFocus
-          className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 rounded-xl px-3 py-2 text-sm focus:outline-none"
+          style={{ border: "1px solid var(--line)", color: "var(--ink)", background: "var(--bg)" }}
         />
         <button
           type="submit"
-          className="bg-blue-600 text-white text-sm px-4 py-2 rounded-xl hover:bg-blue-700"
+          className="text-white text-sm px-4 py-2 rounded-xl transition-opacity hover:opacity-90"
+          style={{ background: "var(--navy)" }}
         >
           Voir
         </button>

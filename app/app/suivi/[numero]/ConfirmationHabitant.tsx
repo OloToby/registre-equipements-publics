@@ -31,20 +31,22 @@ export default function ConfirmationHabitant({
   if (sent) return null;
 
   return (
-    <div className="mt-4 border-t border-green-200 pt-4">
-      <p className="text-sm font-medium text-gray-700 mb-3">Le problème est-il réglé ?</p>
+    <div className="mt-4 pt-4" style={{ borderTop: "1px solid #A3D9BC" }}>
+      <p className="text-sm font-semibold mb-3" style={{ color: "var(--ink)" }}>Le problème est-il réglé ?</p>
       <div className="flex gap-3">
         <button
           onClick={() => confirm(true)}
           disabled={loading}
-          className="flex-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
+          className="flex-1 font-bold py-2.5 rounded-xl text-sm transition-opacity hover:opacity-80 disabled:opacity-50 text-white"
+          style={{ background: "var(--ok)" }}
         >
-          👍 Oui, c'est résolu
+          👍 Oui, c&apos;est résolu
         </button>
         <button
           onClick={() => confirm(false)}
           disabled={loading}
-          className="flex-1 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
+          className="flex-1 font-bold py-2.5 rounded-xl text-sm transition-opacity hover:opacity-80 disabled:opacity-50 text-white"
+          style={{ background: "var(--warn)" }}
         >
           👎 Non, toujours présent
         </button>
