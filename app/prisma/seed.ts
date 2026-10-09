@@ -87,14 +87,6 @@ async function main() {
     { label: "Pose de la nouvelle pièce avec numéro de série", ordre: 5, bloqueCloture: false },
     { label: "Mesure du débit après intervention", ordre: 6, bloqueCloture: false },
   ];
-  for (const item of checklistForage) {
-    await prisma.checklistItemType.upsert({
-      where: undefined,
-      update: {},
-      create: { ...item, typeOuvrageId: typeForage.id, obligatoire: true, typeIntervention: "CORRECTIF" },
-    }).catch(() => {}); // ignore unique violations
-  }
-  // Recréer proprement
   await prisma.checklistItemType.deleteMany({ where: { typeOuvrageId: typeForage.id } });
   for (const item of checklistForage) {
     await prisma.checklistItemType.create({
@@ -137,18 +129,15 @@ async function main() {
   });
 
   // Plan d'entretien forage
-  const planForage = await prisma.planEntretienType.upsert({
-    where: undefined,
-    update: {},
-    create: {
+  await prisma.planEntretienType.deleteMany({ where: { typeOuvrageId: typeForage.id } });
+  const planForage = await prisma.planEntretienType.create({
+    data: {
       typeOuvrageId: typeForage.id,
       nom: "Inspection trimestrielle",
       periodiciteJours: 90,
       description: "Nettoyage, contrôle électrique, relevé capteurs (conception auteur)",
     },
-  }).catch(async () =>
-    await prisma.planEntretienType.findFirst({ where: { typeOuvrageId: typeForage.id } })
-  ) as Awaited<ReturnType<typeof prisma.planEntretienType.create>>;
+  });
 
   // — ÉCLAIRAGE PUBLIC : Lampadaire solaire
   const typeLamp = await prisma.typeOuvrage.upsert({
@@ -436,12 +425,14 @@ async function main() {
   if (eau001 && eau002) {
     const signExist = await prisma.signalement.count({ where: { numero: { startsWith: "S-2026-0" } } });
     if (signExist === 0) {
-      for (const [idx, { ouvrage, panne }] of [
+      const initSignalements = [
         { ouvrage: eau001, panne: { code: "DEBIT_FAIBLE", libelle: "Débit insuffisant" } },
         { ouvrage: eau002, panne: { code: "FUITE", libelle: "Fuite visible" } },
         { ouvrage: eau001, panne: { code: "AUTRE", libelle: "Autre problème" } },
         { ouvrage: eau002, panne: { code: "DEBIT_FAIBLE", libelle: "Débit insuffisant" } },
-      ].entries()) {
+      ];
+      for (let idx = 0; idx < initSignalements.length; idx++) {
+        const { ouvrage, panne } = initSignalements[idx];
         await prisma.signalement.create({
           data: {
             numero: `S-2026-${String(idx + 138).padStart(4, "0")}`,
