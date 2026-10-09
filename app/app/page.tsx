@@ -118,10 +118,8 @@ export default function HomePage() {
             <Link
               key={s.step}
               href={s.href}
-              className="flex items-center gap-3 p-3 rounded-xl transition-colors hover:opacity-90"
+              className="scenario-step flex items-center gap-3 p-3 rounded-xl transition-colors"
               style={{ border: "1px solid var(--line)" }}
-              onMouseEnter={e => (e.currentTarget.style.background = "var(--lilac)")}
-              onMouseLeave={e => (e.currentTarget.style.background = "")}
             >
               <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shrink-0 text-white"
                     style={{ background: "var(--navy)" }}>
