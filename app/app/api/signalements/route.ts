@@ -13,14 +13,17 @@ async function genNumero(): Promise<string> {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { ouvrageId, panneCode, fonctionne, canal, description, photoUrl, lat, lng, telephone } = body;
+  const {
+    ouvrageId, ouvrageCode, panneCode, fonctionne, canal, description,
+    photoUrl, lat, lng, telephone, telephoneContact, anonyme,
+  } = body;
 
-  if (!ouvrageId || !panneCode) {
+  if ((!ouvrageId && !ouvrageCode) || !panneCode) {
     return NextResponse.json({ error: "Champs manquants" }, { status: 400 });
   }
 
   const ouvrage = await prisma.ouvrage.findUnique({
-    where: { id: ouvrageId },
+    where: ouvrageId ? { id: ouvrageId } : { code: (ouvrageCode as string).toUpperCase() },
     include: { typeOuvrage: { include: { priorityRules: true, pannesTypiques: true } } },
   });
   if (!ouvrage) return NextResponse.json({ error: "Ouvrage introuvable" }, { status: 404 });
@@ -34,10 +37,11 @@ export async function POST(req: NextRequest) {
   const { priorite } = calcPriorite(panneCode, rules);
   const numero = await genNumero();
 
+  const tel = telephoneContact ?? telephone ?? null;
   const signalement = await prisma.signalement.create({
     data: {
       numero,
-      ouvrageId,
+      ouvrageId: ouvrage.id,
       panneCode,
       panneLibelle: panne?.libelle ?? panneCode,
       fonctionne: fonctionne ?? true,
@@ -48,8 +52,8 @@ export async function POST(req: NextRequest) {
       photoUrl,
       lat,
       lng,
-      telephoneContact: telephone ?? null,
-      anonyme: !telephone,
+      telephoneContact: tel,
+      anonyme: anonyme ?? !tel,
       numeroSuivi: numero,
     },
   });
