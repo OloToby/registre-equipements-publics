@@ -68,28 +68,36 @@ export default function SignalerPage({ params }: { params: { code: string } }) {
   // ─── Étape 1 : choix de la panne ─────────────────────────────────────────────
   if (step === "panne") {
     return (
-      <main className="max-w-lg mx-auto px-4 py-6 space-y-4">
-        <div className="flex items-center gap-3 mb-2">
-          <Link href={`/ouvrage/${ouvrageCode}`} className="text-blue-600 text-sm">← Retour</Link>
-          <h1 className="text-lg font-bold text-gray-900">Que se passe-t-il ?</h1>
+      <main className="max-w-lg mx-auto px-4 pb-10 space-y-4">
+        <div className="flex items-center gap-3 pt-4 pb-1">
+          <Link href={`/ouvrage/${ouvrageCode}`} className="text-sm font-semibold hover:underline"
+                style={{ color: "var(--blue)" }}>← Retour</Link>
+          <span style={{ color: "var(--line)" }}>·</span>
+          <h1 className="font-bold" style={{ color: "var(--ink)" }}>Que se passe-t-il ?</h1>
         </div>
-        <p className="text-sm text-gray-500">Équipement : <span className="font-mono font-semibold">{ouvrageCode}</span></p>
+        <p className="text-sm" style={{ color: "var(--muted)" }}>
+          Équipement : <span className="font-mono font-semibold" style={{ color: "var(--ink)" }}>{ouvrageCode}</span>
+        </p>
 
         <div className="space-y-2">
           {PANNES.map((p) => (
             <button
               key={p.code}
               onClick={() => { setPanneCode(p.code); setStep("description"); }}
-              className={`w-full flex items-center gap-3 p-4 rounded-2xl border-2 text-left transition-colors
-                ${p.gravite === "CRITIQUE" ? "border-red-200 hover:border-red-400 hover:bg-red-50" : "border-gray-200 hover:border-blue-300 hover:bg-blue-50"}`}
+              className="w-full flex items-center gap-4 p-4 rounded-2xl text-left transition-opacity hover:opacity-80"
+              style={{
+                background: p.gravite === "CRITIQUE" ? "var(--bad-bg)" : "var(--surface)",
+                border: `1.5px solid ${p.gravite === "CRITIQUE" ? "#EBADA8" : "var(--line)"}`,
+              }}
             >
-              <span className="text-2xl">{p.pictogramme}</span>
+              <span className="text-2xl shrink-0">{p.pictogramme}</span>
               <div>
-                <p className="font-semibold text-gray-800">{p.libelle}</p>
+                <p className="font-semibold" style={{ color: "var(--ink)" }}>{p.libelle}</p>
                 {p.gravite === "CRITIQUE" && (
-                  <p className="text-xs text-red-600 mt-0.5">Priorité urgente</p>
+                  <p className="text-xs mt-0.5 font-bold" style={{ color: "var(--bad)" }}>Priorité urgente</p>
                 )}
               </div>
+              <span className="ml-auto text-sm" style={{ color: "var(--muted)" }}>→</span>
             </button>
           ))}
         </div>
@@ -100,21 +108,25 @@ export default function SignalerPage({ params }: { params: { code: string } }) {
   // ─── Étape 2 : description ────────────────────────────────────────────────────
   if (step === "description") {
     return (
-      <main className="max-w-lg mx-auto px-4 py-6 space-y-4">
-        <div className="flex items-center gap-3 mb-2">
-          <button onClick={() => setStep("panne")} className="text-blue-600 text-sm">← Retour</button>
-          <h1 className="text-lg font-bold text-gray-900">Décrivez le problème</h1>
+      <main className="max-w-lg mx-auto px-4 pb-10 space-y-4">
+        <div className="flex items-center gap-3 pt-4 pb-1">
+          <button onClick={() => setStep("panne")} className="text-sm font-semibold hover:underline"
+                  style={{ color: "var(--blue)" }}>← Retour</button>
+          <span style={{ color: "var(--line)" }}>·</span>
+          <h1 className="font-bold" style={{ color: "var(--ink)" }}>Décrivez le problème</h1>
         </div>
 
         {panneSel && (
-          <div className="flex items-center gap-2 bg-gray-50 rounded-xl p-3 border border-gray-200">
-            <span className="text-xl">{panneSel.pictogramme}</span>
-            <span className="font-medium text-gray-800">{panneSel.libelle}</span>
+          <div className="flex items-center gap-3 rounded-2xl p-4"
+               style={{ background: "var(--soft)", border: "1px solid var(--line)" }}>
+            <span className="text-2xl shrink-0">{panneSel.pictogramme}</span>
+            <span className="font-semibold" style={{ color: "var(--ink)" }}>{panneSel.libelle}</span>
           </div>
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-bold uppercase tracking-wide mb-1.5"
+                 style={{ color: "var(--muted)" }}>
             Précisions (optionnel)
           </label>
           <textarea
@@ -122,13 +134,15 @@ export default function SignalerPage({ params }: { params: { code: string } }) {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Ex : pas d'eau depuis ce matin, le robinet ne répond plus…"
             rows={3}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none resize-none"
+            style={{ border: "1px solid var(--line)", background: "var(--surface)", color: "var(--ink)" }}
           />
         </div>
 
         <button
           onClick={() => setStep("contact")}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 rounded-2xl transition-colors"
+          className="w-full font-bold py-4 rounded-2xl transition-opacity hover:opacity-90 text-white"
+          style={{ background: "var(--navy)" }}
         >
           Continuer →
         </button>
@@ -139,18 +153,21 @@ export default function SignalerPage({ params }: { params: { code: string } }) {
   // ─── Étape 3 : contact ────────────────────────────────────────────────────────
   if (step === "contact") {
     return (
-      <main className="max-w-lg mx-auto px-4 py-6 space-y-4">
-        <div className="flex items-center gap-3 mb-2">
-          <button onClick={() => setStep("description")} className="text-blue-600 text-sm">← Retour</button>
-          <h1 className="text-lg font-bold text-gray-900">Recevoir une réponse ?</h1>
+      <main className="max-w-lg mx-auto px-4 pb-10 space-y-4">
+        <div className="flex items-center gap-3 pt-4 pb-1">
+          <button onClick={() => setStep("description")} className="text-sm font-semibold hover:underline"
+                  style={{ color: "var(--blue)" }}>← Retour</button>
+          <span style={{ color: "var(--line)" }}>·</span>
+          <h1 className="font-bold" style={{ color: "var(--ink)" }}>Recevoir une réponse ?</h1>
         </div>
 
-        <p className="text-sm text-gray-500">
+        <p className="text-sm" style={{ color: "var(--muted)" }}>
           Facultatif. Laissez votre numéro pour être informé·e de la résolution.
         </p>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-bold uppercase tracking-wide mb-1.5"
+                 style={{ color: "var(--muted)" }}>
             Téléphone (optionnel)
           </label>
           <input
@@ -158,13 +175,14 @@ export default function SignalerPage({ params }: { params: { code: string } }) {
             value={telephone}
             onChange={(e) => setTelephone(e.target.value)}
             placeholder="+229 97 00 00 00"
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none"
+            style={{ border: "1px solid var(--line)", background: "var(--surface)", color: "var(--ink)" }}
           />
-          <p className="text-xs text-gray-400 mt-1">Numéro fictif pour la démo</p>
+          <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>Numéro fictif pour la démo</p>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700">
+          <div className="rounded-xl p-3 text-sm" style={{ background: "var(--bad-bg)", border: "1px solid #EBADA8", color: "var(--bad)" }}>
             {error}
           </div>
         )}
@@ -172,7 +190,8 @@ export default function SignalerPage({ params }: { params: { code: string } }) {
         <button
           onClick={submit}
           disabled={submitting}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold py-4 rounded-2xl transition-colors"
+          className="w-full font-bold py-4 rounded-2xl transition-opacity hover:opacity-90 disabled:opacity-50 text-white"
+          style={{ background: "var(--navy)" }}
         >
           {submitting ? "Envoi…" : "📢 Envoyer le signalement"}
         </button>
@@ -180,7 +199,8 @@ export default function SignalerPage({ params }: { params: { code: string } }) {
         <button
           onClick={submit}
           disabled={submitting}
-          className="w-full text-gray-500 text-sm py-2"
+          className="w-full text-sm py-2"
+          style={{ color: "var(--muted)" }}
         >
           Envoyer anonymement (sans numéro)
         </button>
@@ -192,28 +212,30 @@ export default function SignalerPage({ params }: { params: { code: string } }) {
   return (
     <main className="max-w-lg mx-auto px-4 py-12 text-center space-y-5">
       <div className="text-6xl">✅</div>
-      <h1 className="text-2xl font-bold text-gray-900">Signalement reçu !</h1>
-      <p className="text-gray-600">
-        Votre signalement a été transmis à l'équipe de maintenance.
+      <h1 className="text-2xl font-black" style={{ color: "var(--ink)" }}>Signalement reçu !</h1>
+      <p style={{ color: "var(--muted)" }}>
+        Votre signalement a été transmis à l&apos;équipe de maintenance.
       </p>
       {result && (
-        <div className="bg-blue-50 rounded-2xl p-5 text-left border border-blue-200">
-          <p className="text-sm text-blue-700 font-medium">Numéro de suivi</p>
-          <p className="text-2xl font-mono font-bold text-blue-900 mt-1">{result.numero}</p>
+        <div className="rounded-2xl p-5 text-left" style={{ background: "var(--ok-bg)", border: "1px solid #A3D9BC" }}>
+          <p className="text-sm font-bold" style={{ color: "var(--ok)" }}>Numéro de suivi</p>
+          <p className="text-2xl font-mono font-black mt-1" style={{ color: "var(--ink)" }}>{result.numero}</p>
           {result.priorite === "P1" && (
-            <p className="text-sm text-red-600 mt-2 font-medium">⚡ Signalement prioritaire — intervention sous 48h</p>
+            <p className="text-sm mt-2 font-bold" style={{ color: "var(--bad)" }}>⚡ Signalement prioritaire — intervention sous 48h</p>
           )}
         </div>
       )}
       {result && (
         <Link
           href={`/suivi/${result.numero}`}
-          className="block w-full bg-gray-800 hover:bg-gray-700 text-white font-semibold py-4 rounded-2xl transition-colors"
+          className="block w-full font-bold py-4 rounded-2xl transition-opacity hover:opacity-90 text-white"
+          style={{ background: "var(--navy)" }}
         >
           Suivre mon signalement
         </Link>
       )}
-      <Link href={`/ouvrage/${ouvrageCode}`} className="block text-gray-500 text-sm">
+      <Link href={`/ouvrage/${ouvrageCode}`} className="block text-sm"
+            style={{ color: "var(--muted)" }}>
         Retour à la fiche équipement
       </Link>
     </main>

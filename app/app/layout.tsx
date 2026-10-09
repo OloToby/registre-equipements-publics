@@ -1,12 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { Montserrat } from "next/font/google";
 import "./globals.css";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  variable: "--font-montserrat",
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
 });
+
 const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
   variable: "--font-geist-mono",
@@ -21,7 +24,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1d4ed8",
+  themeColor: "#253970",
   width: "device-width",
   initialScale: 1,
 };
@@ -33,10 +36,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-gray-50`}>
-        {/* Bandeau DONNÉES FICTIVES — slide 14 Deck 3 */}
-        <div className="bg-amber-400 text-amber-900 text-xs font-semibold text-center py-1 px-2 sticky top-0 z-50">
-          ⚠ DONNÉES FICTIVES — Prototype de démonstration — Ne pas utiliser comme référence officielle
+      <body className={`${montserrat.variable} ${geistMono.variable} antialiased min-h-screen`}
+            style={{ background: "var(--bg)", color: "var(--ink)" }}>
+        {/* Bandeau DONNÉES FICTIVES */}
+        <div className="sticky top-0 z-50 flex items-center justify-center gap-3 px-4 py-2"
+             style={{ background: "var(--navy)", color: "#fff", fontSize: 12 }}>
+          <span className="font-black tracking-widest uppercase px-2 py-0.5 rounded text-[10px]"
+                style={{ background: "var(--gold)", color: "var(--ink)" }}>
+            DONNÉES FICTIVES
+          </span>
+          <span className="font-semibold opacity-80">Prototype de démonstration — Ne pas utiliser comme référence officielle</span>
         </div>
         {children}
       </body>
