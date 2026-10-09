@@ -5,7 +5,7 @@
 // Conception auteur : 3 étapes UX : choix panne → description → contact optionnel
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 const PANNES: { code: string; libelle: string; pictogramme: string; gravite: string }[] = [
@@ -19,7 +19,6 @@ const PANNES: { code: string; libelle: string; pictogramme: string; gravite: str
 type Step = "panne" | "description" | "contact" | "submitted";
 
 export default function SignalerPage({ params }: { params: { code: string } }) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const preselectedPanne = searchParams.get("panne");
 

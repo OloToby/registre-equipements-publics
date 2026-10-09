@@ -3,8 +3,6 @@ import { prisma } from "@/lib/db";
 import { audit } from "@/lib/auth";
 import { calcPriorite } from "@/lib/indicateurs";
 
-let compteur = 142; // départ S-2026-0142 selon Deck 3 slide 7
-
 async function genNumero(): Promise<string> {
   const annee = new Date().getFullYear();
   const count = await prisma.signalement.count();

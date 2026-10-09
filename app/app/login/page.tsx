@@ -1,9 +1,6 @@
 "use client";
 
-// Page de connexion — tous les rôles sauf habitant (sans compte)
-// Conception auteur : formulaire email/mdp, cookie de session, redirection post-login
-
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
@@ -14,7 +11,7 @@ const DEMO_USERS = [
   { label: "Pôle Atlantique", email: "pole@atlantique.bj", role: "AGENCE_POLE" },
 ];
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") ?? "/";
@@ -112,5 +109,13 @@ export default function LoginPage() {
         </Link>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

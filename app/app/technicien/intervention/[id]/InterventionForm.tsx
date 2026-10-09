@@ -36,7 +36,6 @@ export default function InterventionForm({ signalementId, ouvrageId, checklistIt
   const [doneAt, setDoneAt] = useState(new Date().toISOString().slice(0, 16));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [cloreMode, setCloreMode] = useState(false);
   const [result, setResult] = useState<{ numero?: string; synced: boolean } | null>(null);
 
   const consignationItem = checklistItems.find((i) => i.bloqueCloture);
