@@ -94,27 +94,35 @@ export default async function CommunePage() {
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-      <div className="flex items-center justify-between">
+
+      {/* En-tête */}
+      <div className="flex items-center justify-between pt-2">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">{commune.nom}</h1>
-          <p className="text-sm text-gray-500">{ouvragesTotal} ouvrages enregistrés</p>
+          <h1 className="text-xl font-black" style={{ color: "var(--ink)" }}>{commune.nom}</h1>
+          <p className="text-sm mt-0.5" style={{ color: "var(--muted)" }}>{ouvragesTotal} ouvrages enregistrés</p>
         </div>
         <Link
           href="/commune/carte"
-          className="text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-xl border border-blue-200 transition-colors"
+          className="text-sm font-semibold px-4 py-2 rounded-xl transition-opacity hover:opacity-80"
+          style={{ background: "var(--lilac)", color: "var(--navy)", border: "1px solid var(--line)" }}
         >
           🗺️ Carte
         </Link>
       </div>
 
-      {/* 7 KPIs — slide 15 Deck 2 */}
+      {/* 7 KPIs */}
       <section>
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-          Indicateurs de performance — slide 15 Deck 2
-        </h2>
+        <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--muted)" }}>
+          Indicateurs de performance
+        </p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <KpiCard label="Disponibilité" value={`${Math.round(disponibilite * 10) / 10} %`}
-            target="≥ 85 %" ok={disponibilite >= 85} />
+          <KpiCard
+            label="Disponibilité"
+            value={`${Math.round(disponibilite * 10) / 10} %`}
+            target="≥ 85 %"
+            ok={disponibilite >= 85}
+            highlight
+          />
           <KpiCard label="Délai médian" value={delaiMedian > 0 ? `${Math.round(delaiMedian)}h` : "—"}
             target="< 72h" ok={delaiMedian > 0 && delaiMedian < 72} />
           <KpiCard label="Préventif à temps" value={`${Math.round(preventifPct)} %`}
@@ -135,9 +143,9 @@ export default async function CommunePage() {
       {/* Alertes stock */}
       {stocksSousSeuil.length > 0 && (
         <section>
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-            Stocks sous seuil d'alerte
-          </h2>
+          <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--muted)" }}>
+            Stocks sous seuil d&apos;alerte
+          </p>
           <div className="space-y-2">
             {stocksSousSeuil.map((s) => (
               <StockAlert key={s.id} stock={s} />
@@ -149,11 +157,12 @@ export default async function CommunePage() {
       {/* File de signalements */}
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--muted)" }}>
             File de signalements ({signalements.length})
-          </h2>
-          <Link href="/commune/signalements" className="text-xs text-blue-600 hover:underline">
-            Voir tout
+          </p>
+          <Link href="/commune/signalements" className="text-xs font-semibold hover:underline"
+                style={{ color: "var(--blue)" }}>
+            Voir tout →
           </Link>
         </div>
         <SignalementQueue
@@ -171,23 +180,23 @@ export default async function CommunePage() {
         />
       </section>
 
-      {/* Liens */}
+      {/* Liens rapides */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <Link href="/commune/ouvrages" className="text-center text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl">
-          🏗️ Ouvrages
-        </Link>
-        <Link href="/commune/carte" className="text-center text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl">
-          🗺️ Carte
-        </Link>
-        <Link href="/commune/stocks" className="text-center text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl">
-          📦 Stocks
-        </Link>
-        <Link href="/pole" className="text-center text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl">
-          📊 Vue pôle
-        </Link>
+        {[
+          { href: "/commune/ouvrages", icon: "🏗️", label: "Ouvrages" },
+          { href: "/commune/carte",    icon: "🗺️", label: "Carte" },
+          { href: "/commune/stocks",   icon: "📦", label: "Stocks" },
+          { href: "/pole",             icon: "📊", label: "Vue pôle" },
+        ].map((l) => (
+          <Link key={l.href} href={l.href}
+                className="text-center text-sm font-semibold py-3 rounded-xl transition-opacity hover:opacity-80"
+                style={{ background: "var(--soft)", color: "var(--ink)", border: "1px solid var(--line)" }}>
+            {l.icon} {l.label}
+          </Link>
+        ))}
       </div>
 
-      <p className="text-xs text-gray-400 text-center pb-4">
+      <p className="text-xs text-center pb-4" style={{ color: "var(--muted)" }}>
         Données fictives — isFictif=true — conception auteur
       </p>
     </main>
