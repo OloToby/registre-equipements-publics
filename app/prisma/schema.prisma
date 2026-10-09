@@ -1,0 +1,426 @@
+// Registre du cycle de vie des équipements publics — Bénin
+// Compatible SQLite (dev) et PostgreSQL (prod)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── GÉOGRAPHIE ────────────────────────────────────────────────────────────────
+
+model Pole {
+  id          String    @id @default(cuid())
+  nom         String
+  code        String    @unique // ex: ATL (Atlantique/Littoral)
+  communes    Commune[]
+  createdAt   DateTime  @default(now())
+}
+
+model Commune {
+  id              String        @id @default(cuid())
+  nom             String
+  code            String        @unique // ex: COM-A
+  isFictif        Boolean       @default(true)
+  pole            Pole          @relation(fields: [poleId], references: [id])
+  poleId          String
+  arrondissements Arrondissement[]
+  ouvrages        Ouvrage[]
+  utilisateurs    Utilisateur[]
+  stocks          StockPiece[]
+  createdAt       DateTime      @default(now())
+}
+
+model Arrondissement {
+  id        String    @id @default(cuid())
+  nom       String
+  code      String    @unique
+  commune   Commune   @relation(fields: [communeId], references: [id])
+  communeId String
+  ouvrages  Ouvrage[]
+  lat       Float?
+  lng       Float?
+  createdAt DateTime  @default(now())
+}
+
+// ─── TYPES ET FAMILLES D'OUVRAGES ──────────────────────────────────────────────
+
+model TypeOuvrage {
+  id              String          @id @default(cuid())
+  famille         String          // EAU_POTABLE | ECLAIRAGE | SPORT | ARTISANAT | EDUCATION
+  nom             String          // ex: "Forage équipé", "Lampadaire solaire"
+  code            String          @unique // ex: FORAGE, LAMP
+  modele3dFichier String?         // nom du fichier .glb
+  ouvrages        Ouvrage[]
+  composantsType  ComposantType[]
+  checklistItems  ChecklistItemType[]
+  pannesTypiques  PanneTypique[]
+  priorityRules   PriorityRule[]
+  planEntretienType PlanEntretienType[]
+  createdAt       DateTime        @default(now())
+}
+
+model ComposantType {
+  id              String        @id @default(cuid())
+  typeOuvrage     TypeOuvrage   @relation(fields: [typeOuvrageId], references: [id])
+  typeOuvrageId   String
+  nom             String        // ex: "Pompe immergée", "Capteur de niveau"
+  code            String        // ex: POMPE, CAPTEUR
+  dureeVieAns     Int           // durée de vie attendue en années (conception auteur)
+  ordre           Int           @default(0) // ordre d'affichage sur le schéma 3D
+  description     String?
+  composants      Composant[]
+  createdAt       DateTime      @default(now())
+
+  @@unique([typeOuvrageId, code])
+}
+
+model ChecklistItemType {
+  id              String        @id @default(cuid())
+  typeOuvrage     TypeOuvrage   @relation(fields: [typeOuvrageId], references: [id])
+  typeOuvrageId   String
+  label           String        // ex: "Consignation électrique effectuée"
+  description     String?
+  ordre           Int           @default(0)
+  obligatoire     Boolean       @default(true)
+  bloqueCloture   Boolean       @default(false) // la consignation électrique bloque
+  typeIntervention String       @default("CORRECTIF") // CORRECTIF | PREVENTIF | TOUS
+  createdAt       DateTime      @default(now())
+}
+
+model PanneTypique {
+  id              String        @id @default(cuid())
+  typeOuvrage     TypeOuvrage   @relation(fields: [typeOuvrageId], references: [id])
+  typeOuvrageId   String
+  code            String        // ex: PAS_EAU, FUITE, LAMPE_ETEINTE
+  libelle         String        // ex: "Pas d'eau"
+  pictogramme     String?       // nom de l'icône (Lucide ou emoji)
+  gravite         String        @default("NORMALE") // CRITIQUE | NORMALE | MINEURE
+  createdAt       DateTime      @default(now())
+
+  @@unique([typeOuvrageId, code])
+}
+
+model PriorityRule {
+  id              String        @id @default(cuid())
+  typeOuvrage     TypeOuvrage   @relation(fields: [typeOuvrageId], references: [id])
+  typeOuvrageId   String
+  panneCodes      String        // JSON array de codes de pannes
+  priorite        String        // P1 | P2 | P3
+  delaiHeures     Int           // délai visé en heures
+  justification   String?
+  createdAt       DateTime      @default(now())
+}
+
+model PlanEntretienType {
+  id              String        @id @default(cuid())
+  typeOuvrage     TypeOuvrage   @relation(fields: [typeOuvrageId], references: [id])
+  typeOuvrageId   String
+  nom             String        // ex: "Inspection mensuelle"
+  periodiciteJours Int          // ex: 30, 90, 365
+  description     String?
+  taches          TachePreventive[]
+  createdAt       DateTime      @default(now())
+}
+
+// ─── OUVRAGES ──────────────────────────────────────────────────────────────────
+
+model Ouvrage {
+  id              String        @id @default(cuid())
+  code            String        @unique // ex: EAU-004
+  nom             String        // ex: "Système d'eau de Sèdjro-village"
+  typeOuvrage     TypeOuvrage   @relation(fields: [typeOuvrageId], references: [id])
+  typeOuvrageId   String
+  commune         Commune       @relation(fields: [communeId], references: [id])
+  communeId       String
+  arrondissement  Arrondissement? @relation(fields: [arrondissementId], references: [id])
+  arrondissementId String?
+  isFictif        Boolean       @default(true)
+  phase           String        @default("EXPLOITER") // PLANIFIER|RÉCEPTIONNER|METTRE_EN_SERVICE|EXPLOITER|MAINTENIR|RENOUVELER
+  etat            String        @default("BON") // BON|ATTENTION|CRITIQUE|HORS_SERVICE
+  lat             Float?
+  lng             Float?
+  populationDesservie Int?
+  dateMiseEnService DateTime?
+  maitreDOuvrage  String?
+  entreprise      String?
+  finGarantie     DateTime?
+  responsableEntretienId String?
+  composants      Composant[]
+  signalements    Signalement[]
+  interventions   Intervention[]
+  tachesPreventives TachePreventive[]
+  documents       Document[]
+  capteurs        MesureCapteur[]
+  contrats        ContratEntretien[]
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model Composant {
+  id              String        @id @default(cuid())
+  ouvrage         Ouvrage       @relation(fields: [ouvrageId], references: [id])
+  ouvrageId       String
+  composantType   ComposantType @relation(fields: [composantTypeId], references: [id])
+  composantTypeId String
+  numeroDeSerie   String?
+  datePose        DateTime?
+  etat            String        @default("BON") // BON|ATTENTION|USURE|HS
+  enAlerte        Boolean       @default(false)
+  coutAchat       Int?          // en FCFA
+  fournisseur     String?
+  finGarantie     DateTime?
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+// ─── SIGNALEMENTS ──────────────────────────────────────────────────────────────
+
+model Signalement {
+  id              String        @id @default(cuid())
+  numero          String        @unique // ex: S-2026-0142
+  ouvrage         Ouvrage       @relation(fields: [ouvrageId], references: [id])
+  ouvrageId       String
+  panneCode       String        // référence à PanneTypique.code
+  panneLibelle    String        // libellé au moment du signalement
+  fonctionne      Boolean       // fonctionne encore ?
+  canal           String        @default("QR") // QR|SMS|APPEL|AGENT
+  priorite        String?       // P1|P2|P3 (fixée par la commune)
+  statut          String        @default("RECU") // RECU|TRIAGE|AFFECTE|EN_COURS|CLOS|ROUVERT
+  description     String?
+  photoUrl        String?
+  lat             Float?
+  lng             Float?
+  telephoneContact String?      // optionnel, pour SMS retour
+  anonyme         Boolean       @default(true)
+  numeroSuivi     String?       // identique à `numero`, alias lisible
+  affectation     Affectation?
+  intervention    Intervention?
+  confirmationHabitant Boolean? // null = en attente, true = réglé, false = pas réglé
+  confirmeAt      DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  auditLogs       AuditLog[]
+}
+
+model Affectation {
+  id              String        @id @default(cuid())
+  signalement     Signalement   @relation(fields: [signalementId], references: [id])
+  signalementId   String        @unique
+  technicien      Utilisateur?  @relation(fields: [technicienId], references: [id])
+  technicienId    String?
+  operateur       String?       // nom de l'opérateur externe
+  contrat         ContratEntretien? @relation(fields: [contratId], references: [id])
+  contratId       String?
+  pieceReserveeId String?       // StockPiece réservée
+  createdAt       DateTime      @default(now())
+}
+
+// ─── INTERVENTIONS ─────────────────────────────────────────────────────────────
+
+model Intervention {
+  id              String        @id @default(cuid())
+  ouvrage         Ouvrage       @relation(fields: [ouvrageId], references: [id])
+  ouvrageId       String
+  signalement     Signalement?  @relation(fields: [signalementId], references: [id])
+  signalementId   String?       @unique
+  type            String        @default("CORRECTIF") // CORRECTIF|PREVENTIF
+  statut          String        @default("EN_COURS") // EN_COURS|CLOS
+  technicien      Utilisateur?  @relation(fields: [technicienId], references: [id])
+  technicienId    String?
+  doneAt          DateTime?     // horodatage terrain (IndexedDB)
+  syncedAt        DateTime?     // horodatage serveur (réception de la sync)
+  coutMO          Int?          // coût main d'œuvre en FCFA
+  coutPieces      Int?          // coût pièces en FCFA
+  mesures         String?       // JSON { debit: 12.5, ... }
+  notes           String?
+  preuve          Preuve?
+  checklistItems  ChecklistItemResponse[]
+  piecesIntervention PieceIntervention[]
+  tachesPreventives TachePreventive[] @relation("TacheIntervention")
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model ChecklistItemResponse {
+  id              String        @id @default(cuid())
+  intervention    Intervention  @relation(fields: [interventionId], references: [id])
+  interventionId  String
+  itemTypeId      String        // ref ChecklistItemType.id
+  label           String
+  coche           Boolean       @default(false)
+  bloqueCloture   Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+}
+
+model Preuve {
+  id              String        @id @default(cuid())
+  intervention    Intervention  @relation(fields: [interventionId], references: [id])
+  interventionId  String        @unique
+  photoAvantUrl   String?
+  photoApresUrl   String?
+  lat             Float?
+  lng             Float?
+  photoAvantAt    DateTime?
+  photoApresAt    DateTime?
+  complete        Boolean       @default(false) // calculé au moment de la clôture
+  createdAt       DateTime      @default(now())
+}
+
+model PieceIntervention {
+  id              String        @id @default(cuid())
+  intervention    Intervention  @relation(fields: [interventionId], references: [id])
+  interventionId  String
+  action          String        // POSE|DEPOSE
+  composantType   String        // ref ComposantType.code
+  numeroDeSerie   String?
+  datePose        DateTime?
+  coutUnitaire    Int?
+  stockPieceId    String?       // ref StockPiece utilisée
+  createdAt       DateTime      @default(now())
+}
+
+// ─── MAINTENANCE PRÉVENTIVE ────────────────────────────────────────────────────
+
+model TachePreventive {
+  id              String        @id @default(cuid())
+  ouvrage         Ouvrage       @relation(fields: [ouvrageId], references: [id])
+  ouvrageId       String
+  planType        PlanEntretienType @relation(fields: [planTypeId], references: [id])
+  planTypeId      String
+  label           String
+  echeanceAt      DateTime
+  faiteAt         DateTime?
+  statut          String        @default("PREVUE") // PREVUE|FAITE|EN_RETARD
+  intervention    Intervention? @relation("TacheIntervention", fields: [interventionId], references: [id])
+  interventionId  String?
+  createdAt       DateTime      @default(now())
+}
+
+// ─── MAGASIN / STOCK ───────────────────────────────────────────────────────────
+
+model StockPiece {
+  id              String        @id @default(cuid())
+  commune         Commune       @relation(fields: [communeId], references: [id])
+  communeId       String
+  composantTypeCode String      // ref ComposantType.code
+  designation     String        // ex: "Pompe immergée 0.75kW"
+  quantite        Int           @default(0)
+  seuilAlerte     Int           @default(1)
+  coutUnitaire    Int?
+  fournisseur     String?
+  reservations    StockReservation[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model StockReservation {
+  id              String        @id @default(cuid())
+  stock           StockPiece    @relation(fields: [stockId], references: [id])
+  stockId         String
+  signalementId   String?
+  reserveePour    String?       // technicien ou mission
+  quantite        Int           @default(1)
+  statut          String        @default("ACTIVE") // ACTIVE|CONSOMMEE|ANNULEE
+  createdAt       DateTime      @default(now())
+}
+
+// ─── CONTRATS ──────────────────────────────────────────────────────────────────
+
+model ContratEntretien {
+  id              String        @id @default(cuid())
+  ouvrage         Ouvrage       @relation(fields: [ouvrageId], references: [id])
+  ouvrageId       String
+  operateur       String
+  telephone       String?
+  debut           DateTime
+  fin             DateTime
+  montantAnnuel   Int?
+  notes           String?
+  affectations    Affectation[]
+  createdAt       DateTime      @default(now())
+}
+
+// ─── DOCUMENTS ─────────────────────────────────────────────────────────────────
+
+model Document {
+  id              String        @id @default(cuid())
+  ouvrage         Ouvrage       @relation(fields: [ouvrageId], references: [id])
+  ouvrageId       String
+  type            String        // PV_RECEPTION|PLAN|GARANTIE|PHOTO|AUTRE
+  nom             String
+  url             String        // chemin local ou URL
+  createdAt       DateTime      @default(now())
+}
+
+// ─── CAPTEURS / MESURES ────────────────────────────────────────────────────────
+
+model MesureCapteur {
+  id              String        @id @default(cuid())
+  ouvrage         Ouvrage       @relation(fields: [ouvrageId], references: [id])
+  ouvrageId       String
+  type            String        // NIVEAU|DEBIT|BATTERIE|TENSION|PRODUCTION_SOLAIRE
+  valeur          Float
+  unite           String        // m|L/min|%|V|kWh
+  fictif          Boolean       @default(true)
+  mesureAt        DateTime      @default(now())
+}
+
+// ─── UTILISATEURS ET RÔLES ─────────────────────────────────────────────────────
+
+model Utilisateur {
+  id              String        @id @default(cuid())
+  email           String        @unique
+  nom             String
+  passwordHash    String
+  role            String        // TECHNICIEN|RESPONSABLE_COMMUNAL|AGENCE_POLE|ADMIN
+  commune         Commune?      @relation(fields: [communeId], references: [id])
+  communeId       String?
+  poleCode        String?       // pour AGENCE_POLE
+  actif           Boolean       @default(true)
+  sessions        Session[]
+  affectations    Affectation[]
+  interventions   Intervention[]
+  auditLogs       AuditLog[]
+  createdAt       DateTime      @default(now())
+}
+
+model Session {
+  id              String        @id @default(cuid())
+  utilisateur     Utilisateur   @relation(fields: [utilisateurId], references: [id])
+  utilisateurId   String
+  token           String        @unique
+  expiresAt       DateTime
+  createdAt       DateTime      @default(now())
+}
+
+// ─── JOURNAL D'AUDIT ───────────────────────────────────────────────────────────
+
+model AuditLog {
+  id              String        @id @default(cuid())
+  utilisateur     Utilisateur?  @relation(fields: [utilisateurId], references: [id])
+  utilisateurId   String?
+  action          String        // CREATE_SIGNALEMENT|AFFECTER|CLORE|MODIFIER_STOCK|etc.
+  entite          String        // Signalement|Intervention|Ouvrage|Stock
+  entiteId        String
+  signalement     Signalement?  @relation(fields: [signalementId], references: [id])
+  signalementId   String?
+  details         String?       // JSON des changements
+  ip              String?
+  createdAt       DateTime      @default(now())
+}
+
+// ─── CONFIGURATION DE DÉMONSTRATION ────────────────────────────────────────────
+
+model DemoSnapshot {
+  id              String        @id @default(cuid())
+  nom             String        @unique // ex: "scenario_initial"
+  description     String?
+  donnees         String        // JSON sérialisé de l'état initial
+  createdAt       DateTime      @default(now())
+}
