@@ -71,3 +71,6 @@ body {
   .text-muted { color: var(--muted); }
   .ring-navy { --tw-ring-color: var(--navy); }
 }
+
+/* Hover sur les étapes du scénario fil rouge (Server Component — pas d'event handler) */
+.scenario-step:hover { background-color: var(--lilac); }
