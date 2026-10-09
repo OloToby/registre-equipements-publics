@@ -1,91 +1,71 @@
-// Liste des ouvrages de la commune
-// Source : programme p. 39 (registre des ouvrages)
-// Conception auteur
+// Liste des ouvrages de la commune — registre
+// Source : Deck 3 slide 12 (c-list), programme p. 39
+// Conception auteur : tableau filtrable par type, état, arrondissement
 
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-
-const ETAT_INFO: Record<string, { label: string; bg: string; color: string }> = {
-  BON:          { label: "En service",   bg: "var(--ok-bg)",   color: "var(--ok)" },
-  ATTENTION:    { label: "Attention",    bg: "var(--warn-bg)", color: "var(--warn)" },
-  HORS_SERVICE: { label: "Hors service", bg: "var(--bad-bg)",  color: "var(--bad)" },
-};
-
-const FAMILLE_EMOJI: Record<string, string> = {
-  EAU_POTABLE: "💧", ECLAIRAGE: "💡", SPORT: "⚽", ARTISANAT: "🏺", EDUCATION: "🏫",
-};
+import OuvragesTable from "./OuvragesTable";
 
 export default async function OuvragesPage() {
   const session = await getSession();
   if (!session) redirect("/login?redirect=/commune/ouvrages");
+  if (!["RESPONSABLE_COMMUNAL", "ADMIN", "AGENCE_POLE"].includes(session.role)) redirect("/");
 
   const communeId = session.communeId ?? (
     await prisma.commune.findFirst({ where: { code: "COM-A" } })
   )?.id;
   if (!communeId) redirect("/commune");
 
+  const commune = await prisma.commune.findUnique({
+    where: { id: communeId },
+    select: { nom: true },
+  });
+
+  const KNOWN = 38;
+
   const ouvrages = await prisma.ouvrage.findMany({
     where: { communeId },
     include: {
-      typeOuvrage: true,
-      signalements: { where: { statut: { notIn: ["CLOS"] } } },
-      composants: { where: { enAlerte: true } },
+      typeOuvrage: { select: { nom: true, famille: true } },
+      arrondissement: { select: { nom: true } },
+      tachesPreventives: { select: { echeanceAt: true, faiteAt: true } },
+      composants: {
+        include: { composantType: { select: { dureeVieAns: true } } },
+      },
     },
     orderBy: { code: "asc" },
   });
 
   return (
-    <main className="max-w-2xl mx-auto px-4 pb-10 space-y-4">
+    <div className="desk">
 
-      {/* Fil d'Ariane */}
-      <div className="flex items-center gap-2 pt-4 text-sm">
-        <Link href="/commune" className="font-semibold hover:underline" style={{ color: "var(--blue)" }}>
-          ← Tableau de bord
-        </Link>
-        <span style={{ color: "var(--line)" }}>·</span>
-        <h1 className="font-bold" style={{ color: "var(--ink)" }}>Ouvrages ({ouvrages.length})</h1>
+      {/* En-tête */}
+      <div className="dhead">
+        <div>
+          <span className="lbl">{commune?.nom ?? "Commune"} · services techniques</span>
+          <h1>Registre des ouvrages</h1>
+          <div className="muted">{ouvrages.length} ouvrages inscrits sur {KNOWN} connus</div>
+        </div>
+        <div className="row">
+          <span className="muted" style={{ fontSize: "12px" }}>
+            Mis à jour {new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+          </span>
+        </div>
       </div>
 
-      <div className="space-y-2">
-        {ouvrages.map((o) => {
-          const etatInfo = ETAT_INFO[o.etat] ?? { label: o.etat, bg: "var(--soft)", color: "var(--muted)" };
-          const emoji = FAMILLE_EMOJI[o.typeOuvrage.famille] ?? "🏗️";
-          return (
-            <Link
-              key={o.id}
-              href={`/commune/ouvrage/${o.id}`}
-              className="flex items-center gap-3 rounded-2xl p-4 transition-opacity hover:opacity-80"
-              style={{ background: "var(--surface)", border: "1px solid var(--line)" }}
-            >
-              <span className="text-2xl shrink-0">{emoji}</span>
-              <div className="flex-1 min-w-0">
-                <p className="font-bold truncate" style={{ color: "var(--ink)" }}>{o.nom}</p>
-                <p className="text-xs font-mono mt-0.5" style={{ color: "var(--muted)" }}>{o.code}</p>
-              </div>
-              <div className="text-right shrink-0 flex flex-col items-end gap-1">
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full"
-                      style={{ background: etatInfo.bg, color: etatInfo.color }}>
-                  {etatInfo.label}
-                </span>
-                {o.signalements.length > 0 && (
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                        style={{ background: "var(--sky)", color: "var(--navy)" }}>
-                    {o.signalements.length} sig.
-                  </span>
-                )}
-                {o.composants.length > 0 && (
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                        style={{ background: "var(--warn-bg)", color: "var(--warn)" }}>
-                    ⚠️ alerte
-                  </span>
-                )}
-              </div>
-            </Link>
-          );
-        })}
-      </div>
-    </main>
+      {/* Tabs */}
+      <nav className="tabs" role="tablist">
+        <Link href="/commune" role="tab" aria-selected="false">Tableau de bord</Link>
+        <Link href="/commune/ouvrages" role="tab" aria-selected="true">Registre des ouvrages</Link>
+        <Link href="/commune/carte" role="tab" aria-selected="false">Carte</Link>
+      </nav>
+
+      {/* Tableau filtrable (client component) */}
+      <OuvragesTable ouvrages={ouvrages} />
+
+      <p className="foot" style={{ textAlign: "center" }}>Prototype. Données, noms de lieux et montants fictifs — conception auteur</p>
+    </div>
   );
 }

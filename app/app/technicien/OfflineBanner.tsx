@@ -7,7 +7,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { getPendingSyncCount, syncPendingInterventions } from "@/lib/offlineDb";
 
-export default function OfflineBanner() {
+export default function OfflineBanner({ inline }: { inline?: boolean }) {
   const [isOnline, setIsOnline] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);
   const [syncing, setSyncing] = useState(false);
@@ -55,32 +55,34 @@ export default function OfflineBanner() {
     }
   }
 
+  // Mode inline : juste le badge de connexion dans l'appbar
+  if (inline) {
+    return (
+      <span className={`net${isOnline ? "" : " off"}`}>
+        {isOnline ? "En ligne" : `Hors connexion${pendingCount > 0 ? " · " + pendingCount + " en attente" : ""}`}
+      </span>
+    );
+  }
+
   if (isOnline && pendingCount === 0) return null;
 
-  const bg = isOnline ? "var(--sky)" : "var(--warn-bg)";
-  const borderColor = isOnline ? "#8BBDD9" : "#E0C570";
-  const textColor = isOnline ? "var(--navy)" : "var(--warn)";
-
   return (
-    <div className="rounded-xl px-4 py-3 flex items-center justify-between gap-3" style={{ background: bg, border: `1px solid ${borderColor}` }}>
+    <div className="rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+         style={{ background: isOnline ? "var(--sky)" : "var(--warn-bg)", border: `1px solid ${isOnline ? "#8BBDD9" : "#E0C570"}` }}>
       <div>
-        <p className="text-sm font-semibold" style={{ color: textColor }}>
-          {isOnline ? "🌐 En ligne" : "📴 Hors connexion"}
+        <p className="text-sm font-semibold" style={{ color: isOnline ? "var(--navy)" : "var(--warn)" }}>
+          {isOnline ? "En ligne" : "Hors connexion"}
         </p>
         {pendingCount > 0 && (
-          <p className="text-xs mt-0.5" style={{ color: textColor }}>
+          <p className="text-xs mt-0.5" style={{ color: isOnline ? "var(--navy)" : "var(--warn)" }}>
             {pendingCount} intervention{pendingCount > 1 ? "s" : ""} en attente de synchronisation
           </p>
         )}
         {lastSync && <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>{lastSync}</p>}
       </div>
       {isOnline && pendingCount > 0 && (
-        <button
-          onClick={handleSync}
-          disabled={syncing}
-          className="text-xs disabled:opacity-50 text-white px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80"
-          style={{ background: "var(--navy)" }}
-        >
+        <button onClick={handleSync} disabled={syncing}
+                className="btn sm" style={{ fontSize: "12px" }}>
           {syncing ? "Sync…" : "Synchroniser"}
         </button>
       )}

@@ -38,88 +38,49 @@ export default async function TechnicienPage() {
     .map((a) => a.signalement)
     .filter((s) => s && !["CLOS"].includes(s.statut));
 
-  return (
-    <main className="max-w-lg mx-auto px-4 pb-10 space-y-4">
-      <OfflineBanner />
+  const fDs = (d: Date) => d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+  const fDT = (d: Date) => fDs(d) + " · " + d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
-      <div className="flex items-center justify-between pt-4">
-        <div>
-          <h1 className="text-xl font-black" style={{ color: "var(--ink)" }}>Mes interventions</h1>
-          <p className="text-sm mt-0.5" style={{ color: "var(--muted)" }}>{session.nom}</p>
+  return (
+    <main style={{ maxWidth: 420, margin: "0 auto", display: "flex", flexDirection: "column", minHeight: "100dvh" }}>
+
+      {/* Barre app */}
+      <div className="appbar">
+        <div className="top">
+          <span className="t">Mes interventions</span>
+          <OfflineBanner inline />
         </div>
-        <Link
-          href="/technicien/sync"
-          className="text-sm font-semibold px-4 py-2 rounded-xl transition-opacity hover:opacity-80"
-          style={{ background: "var(--soft)", color: "var(--ink)", border: "1px solid var(--line)" }}
-        >
-          🔄 Sync
-        </Link>
+        <span className="s">{session.nom ?? "Équipe technique"}</span>
       </div>
 
-      {signalements.length === 0 ? (
-        <div className="rounded-2xl p-8 text-center" style={{ background: "var(--surface)", border: "1px solid var(--line)" }}>
-          <p className="text-4xl mb-3">✅</p>
-          <p className="font-bold" style={{ color: "var(--ink)" }}>Aucune intervention en attente</p>
-          <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>Toutes les interventions assignées ont été traitées.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {signalements.map((s) => {
-            if (!s) return null;
-            const leftBorderColor =
-              s.priorite === "P1" ? "var(--bad)" :
-              s.priorite === "P2" ? "var(--warn)" :
-              "var(--line)";
+      <div className="mbody">
 
+        {/* Dépannages */}
+        <span className="lbl">Dépannages ({signalements.length})</span>
+
+        {signalements.length === 0 ? (
+          <div className="card muted">Aucun dépannage en cours.</div>
+        ) : (
+          signalements.map((s) => {
+            if (!s) return null;
+            const slaH = s.priorite === "P1" ? 48 : s.priorite === "P2" ? 120 : 360;
+            const leftH = slaH - (Date.now() - s.createdAt.getTime()) / 3600000;
             return (
-              <Link
-                key={s.id}
-                href={`/technicien/intervention/${s.id}`}
-                className="block rounded-2xl p-4 transition-opacity hover:opacity-80"
-                style={{
-                  background: "var(--surface)",
-                  border: "1px solid var(--line)",
-                  borderLeft: `4px solid ${leftBorderColor}`,
-                }}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-mono text-xs" style={{ color: "var(--muted)" }}>{s.numero}</p>
-                    <p className="font-bold mt-0.5" style={{ color: "var(--ink)" }}>{s.panneLibelle}</p>
-                    <p className="text-sm truncate mt-0.5" style={{ color: "var(--muted)" }}>{s.ouvrage.nom}</p>
-                    <p className="text-xs" style={{ color: "var(--muted)" }}>{s.ouvrage.commune.nom}</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    {s.priorite === "P1" && (
-                      <span className="text-xs font-black px-2 py-0.5 rounded-full"
-                            style={{ background: "var(--bad-bg)", color: "var(--bad)" }}>URGENT</span>
-                    )}
-                    <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
-                      {new Date(s.createdAt).toLocaleDateString("fr-FR")}
-                    </p>
-                  </div>
+              <Link key={s.id} href={`/technicien/intervention/${s.id}`} className="task">
+                <div className="row">
+                  <span className={`prio ${s.priorite ?? "P3"}`}>{s.priorite ?? "—"}</span>
+                  <span className="muted" style={{ fontSize: "12px" }}>{s.numero}</span>
+                  <span className="grow" />
+                  <span style={{ fontSize: "12px", fontWeight: 700, color: leftH < 12 ? "var(--bad)" : "var(--muted)" }}>
+                    reste {Math.max(0, Math.round(leftH))} h
+                  </span>
                 </div>
+                <strong style={{ fontSize: "15px" }}>{s.ouvrage.nom}</strong>
+                <span className="muted">{s.panneLibelle} · {s.statut === "EN_COURS" ? "intervention en cours" : "fonctionne mal"} · signalé {fDT(s.createdAt)}</span>
               </Link>
             );
-          })}
-        </div>
-      )}
-
-      <div className="grid grid-cols-2 gap-2 pt-2">
-        <Link
-          href="/commune"
-          className="text-center text-sm font-semibold py-3 rounded-xl transition-opacity hover:opacity-80"
-          style={{ background: "var(--soft)", color: "var(--ink)", border: "1px solid var(--line)" }}
-        >
-          🏛️ Vue commune
-        </Link>
-        <Link
-          href="/technicien/offline"
-          className="text-center text-sm font-semibold py-3 rounded-xl transition-opacity hover:opacity-80"
-          style={{ background: "var(--soft)", color: "var(--ink)", border: "1px solid var(--line)" }}
-        >
-          📴 Hors-ligne
-        </Link>
+          })
+        )}
       </div>
     </main>
   );
