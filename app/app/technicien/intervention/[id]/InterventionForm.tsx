@@ -144,10 +144,10 @@ export default function InterventionForm({ signalementId, ouvrageId, checklistIt
     return (
       <div className="text-center space-y-4 py-8">
         <p className="text-4xl">{result.synced ? "✅" : "📴"}</p>
-        <p className="font-semibold text-gray-900">
+        <p className="font-semibold" style={{ color: "var(--navy)" }}>
           {result.synced ? "Intervention enregistrée" : "Mise en file hors-ligne"}
         </p>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm" style={{ color: "var(--muted)" }}>
           {result.synced
             ? "Synchronisée avec le serveur."
             : "Sera synchronisée dès le retour de la connexion."}
@@ -159,51 +159,50 @@ export default function InterventionForm({ signalementId, ouvrageId, checklistIt
   return (
     <div className="space-y-5">
       {/* Double horodatage — slide 10 Deck 3 */}
-      <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
-        <h2 className="text-sm font-semibold text-blue-800 mb-2">⏱ Horodatage terrain</h2>
-        <label className="block text-xs text-blue-700 mb-1">Date et heure de l'intervention (terrain)</label>
+      <div className="rounded-xl p-4" style={{ background: "var(--sky)", border: "1px solid #8BBDD9" }}>
+        <h2 className="text-sm font-semibold mb-2" style={{ color: "var(--navy)" }}>⏱ Horodatage terrain</h2>
+        <label className="block text-xs mb-1" style={{ color: "var(--navy)" }}>Date et heure de l'intervention (terrain)</label>
         <input
           type="datetime-local"
           value={doneAt}
           onChange={(e) => setDoneAt(e.target.value)}
-          className="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm bg-white"
+          className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none"
+          style={{ border: "1px solid #8BBDD9", background: "var(--surface)", color: "var(--ink)" }}
         />
-        <p className="text-xs text-blue-600 mt-1">
+        <p className="text-xs mt-1" style={{ color: "var(--navy)" }}>
           La date de synchronisation serveur sera enregistrée séparément (conception auteur).
         </p>
       </div>
 
       {/* Checklist */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-5">
-        <h2 className="text-sm font-semibold text-gray-700 mb-3">Checklist de sécurité</h2>
+      <div className="rounded-2xl p-5" style={{ background: "var(--surface)", border: "1px solid var(--line)" }}>
+        <h2 className="text-sm font-semibold mb-3" style={{ color: "var(--ink)" }}>Checklist de sécurité</h2>
         <div className="space-y-2">
           {checklistItems.map((item) => {
             const checked = checklist[item.id] ?? false;
             const isBlocking = item.bloqueCloture;
+            const labelStyle = isBlocking
+              ? checked
+                ? { background: "var(--ok-bg)", border: "1px solid #A3D9BC" }
+                : { background: "var(--bad-bg)", border: "1px solid #EBADA8" }
+              : { background: "var(--soft)", border: "1px solid var(--line)" };
             return (
-              <label
-                key={item.id}
-                className={`flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-colors ${
-                  isBlocking
-                    ? checked ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"
-                    : "bg-gray-50 border border-gray-100 hover:border-gray-200"
-                }`}
-              >
+              <label key={item.id} className="flex items-start gap-3 p-3 rounded-xl cursor-pointer" style={labelStyle}>
                 <input
                   type="checkbox"
                   checked={checked}
                   onChange={() => toggleCheck(item.id)}
-                  className="mt-0.5 w-4 h-4 accent-blue-600"
+                  className="mt-0.5 w-4 h-4"
                 />
                 <div>
-                  <p className={`text-sm font-medium ${isBlocking ? (checked ? "text-green-800" : "text-red-800") : "text-gray-800"}`}>
+                  <p className="text-sm font-medium" style={{ color: isBlocking ? (checked ? "var(--ok)" : "var(--bad)") : "var(--ink)" }}>
                     {item.label}
                   </p>
                   {isBlocking && !checked && (
-                    <p className="text-xs text-red-600 mt-0.5">⚠️ Obligatoire avant toute intervention (sécurité)</p>
+                    <p className="text-xs mt-0.5" style={{ color: "var(--bad)" }}>⚠️ Obligatoire avant toute intervention (sécurité)</p>
                   )}
                   {isBlocking && checked && (
-                    <p className="text-xs text-green-600 mt-0.5">✓ Consignation confirmée</p>
+                    <p className="text-xs mt-0.5" style={{ color: "var(--ok)" }}>✓ Consignation confirmée</p>
                   )}
                 </div>
               </label>
@@ -213,40 +212,44 @@ export default function InterventionForm({ signalementId, ouvrageId, checklistIt
       </div>
 
       {/* Photos */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-5">
-        <h2 className="text-sm font-semibold text-gray-700 mb-3">Photos (URL de démonstration)</h2>
-        <p className="text-xs text-gray-400 mb-3">Conception auteur — en production : upload réel via presigned URL</p>
+      <div className="rounded-2xl p-5" style={{ background: "var(--surface)", border: "1px solid var(--line)" }}>
+        <h2 className="text-sm font-semibold mb-3" style={{ color: "var(--ink)" }}>Photos (URL de démonstration)</h2>
+        <p className="text-xs mb-3" style={{ color: "var(--muted)" }}>Conception auteur — en production : upload réel via presigned URL</p>
         <div className="space-y-3">
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Photo avant intervention *</label>
+            <label className="block text-xs mb-1" style={{ color: "var(--muted)" }}>Photo avant intervention *</label>
             <input
               type="url"
               value={photoAvantUrl}
               onChange={(e) => setPhotoAvantUrl(e.target.value)}
               placeholder="https://…/avant.jpg"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+              className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none"
+              style={{ border: "1px solid var(--line)", color: "var(--ink)", background: "var(--bg)" }}
             />
             <button
               type="button"
               onClick={() => setPhotoAvantUrl(`https://demo.registre.bj/photos/avant-${Date.now()}.jpg`)}
-              className="text-xs text-blue-600 mt-1 hover:underline"
+              className="text-xs mt-1 hover:underline"
+              style={{ color: "var(--navy)" }}
             >
               📷 Simuler photo avant
             </button>
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Photo après intervention *</label>
+            <label className="block text-xs mb-1" style={{ color: "var(--muted)" }}>Photo après intervention *</label>
             <input
               type="url"
               value={photoApresUrl}
               onChange={(e) => setPhotoApresUrl(e.target.value)}
               placeholder="https://…/apres.jpg"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+              className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none"
+              style={{ border: "1px solid var(--line)", color: "var(--ink)", background: "var(--bg)" }}
             />
             <button
               type="button"
               onClick={() => setPhotoApresUrl(`https://demo.registre.bj/photos/apres-${Date.now()}.jpg`)}
-              className="text-xs text-blue-600 mt-1 hover:underline"
+              className="text-xs mt-1 hover:underline"
+              style={{ color: "var(--navy)" }}
             >
               📷 Simuler photo après
             </button>
@@ -255,27 +258,29 @@ export default function InterventionForm({ signalementId, ouvrageId, checklistIt
       </div>
 
       {/* Coûts */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-5">
-        <h2 className="text-sm font-semibold text-gray-700 mb-3">Coûts (FCFA)</h2>
+      <div className="rounded-2xl p-5" style={{ background: "var(--surface)", border: "1px solid var(--line)" }}>
+        <h2 className="text-sm font-semibold mb-3" style={{ color: "var(--ink)" }}>Coûts (FCFA)</h2>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Main d'œuvre</label>
+            <label className="block text-xs mb-1" style={{ color: "var(--muted)" }}>Main d'œuvre</label>
             <input
               type="number"
               value={coutMO}
               onChange={(e) => setCoutMO(e.target.value)}
               placeholder="ex: 50000"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+              className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none"
+              style={{ border: "1px solid var(--line)", color: "var(--ink)", background: "var(--bg)" }}
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Pièces</label>
+            <label className="block text-xs mb-1" style={{ color: "var(--muted)" }}>Pièces</label>
             <input
               type="number"
               value={coutPieces}
               onChange={(e) => setCoutPieces(e.target.value)}
               placeholder="ex: 1623000"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+              className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none"
+              style={{ border: "1px solid var(--line)", color: "var(--ink)", background: "var(--bg)" }}
             />
           </div>
         </div>
@@ -283,18 +288,19 @@ export default function InterventionForm({ signalementId, ouvrageId, checklistIt
 
       {/* Notes */}
       <div>
-        <label className="block text-xs text-gray-500 mb-1">Notes libres</label>
+        <label className="block text-xs mb-1" style={{ color: "var(--muted)" }}>Notes libres</label>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Observations terrain…"
           rows={2}
-          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm resize-none"
+          className="w-full rounded-xl px-3 py-2 text-sm resize-none focus:outline-none"
+          style={{ border: "1px solid var(--line)", color: "var(--ink)", background: "var(--bg)" }}
         />
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700">
+        <div className="rounded-xl p-3 text-sm" style={{ background: "var(--bad-bg)", border: "1px solid #EBADA8", color: "var(--bad)" }}>
           {error}
         </div>
       )}
@@ -304,12 +310,13 @@ export default function InterventionForm({ signalementId, ouvrageId, checklistIt
         <button
           onClick={() => submit(true)}
           disabled={submitting || !canClose}
-          className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold py-4 rounded-2xl transition-colors"
+          className="w-full font-semibold py-4 rounded-2xl transition-opacity text-white"
+          style={{ background: canClose ? "var(--ok)" : "var(--line)", color: canClose ? "white" : "var(--muted)", opacity: submitting ? 0.5 : 1 }}
         >
           ✅ Enregistrer et clore l'intervention
         </button>
         {!canClose && (
-          <p className="text-xs text-gray-500 text-center">
+          <p className="text-xs text-center" style={{ color: "var(--muted)" }}>
             {!consignationChecked ? "⚠️ Cochez la consignation électrique" :
              !obligatoiresChecked ? "⚠️ Checklist incomplète" :
              "📷 Photos avant/après requises"}
@@ -318,7 +325,8 @@ export default function InterventionForm({ signalementId, ouvrageId, checklistIt
         <button
           onClick={() => submit(false)}
           disabled={submitting}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-3 rounded-2xl transition-colors text-sm"
+          className="w-full font-semibold py-3 rounded-2xl transition-opacity hover:opacity-90 disabled:opacity-50 text-white text-sm"
+          style={{ background: "var(--navy)" }}
         >
           💾 Enregistrer (en cours)
         </button>

@@ -30,24 +30,25 @@ export default function QrPlatePrint({ ouvrageCode, ouvrageNom, ficheUrl }: Prop
 
   return (
     <div className="flex flex-col sm:flex-row items-center gap-5">
-      <div className="bg-white border-2 border-gray-800 rounded-xl p-4 text-center shrink-0" style={{ width: 200 }}>
+      <div className="rounded-xl p-4 text-center shrink-0" style={{ width: 200, background: "var(--surface)", border: "2px solid var(--navy)" }}>
         <canvas ref={canvasRef} className="block mx-auto" />
-        <p className="text-xs font-bold text-gray-800 mt-2 font-mono">{ouvrageCode}</p>
-        <p className="text-xs text-gray-500 mt-0.5 leading-tight">{ouvrageNom}</p>
-        <p className="text-xs text-gray-400 mt-1">Scannez pour signaler</p>
+        <p className="text-xs font-bold mt-2 font-mono" style={{ color: "var(--navy)" }}>{ouvrageCode}</p>
+        <p className="text-xs mt-0.5 leading-tight" style={{ color: "var(--muted)" }}>{ouvrageNom}</p>
+        <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>Scannez pour signaler</p>
       </div>
-      <div className="text-sm text-gray-600 space-y-2">
-        <p className="font-medium">Impression de la plaque QR</p>
-        <p className="text-xs text-gray-500">
-          URL encodée : <span className="font-mono text-blue-600 break-all">{ficheUrl}</span>
+      <div className="text-sm space-y-2">
+        <p className="font-medium" style={{ color: "var(--ink)" }}>Impression de la plaque QR</p>
+        <p className="text-xs" style={{ color: "var(--muted)" }}>
+          URL encodée : <span className="font-mono break-all" style={{ color: "var(--navy)" }}>{ficheUrl}</span>
         </p>
         <button
           onClick={() => window.print()}
-          className="text-xs bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
+          className="text-xs text-white px-4 py-2 rounded-lg transition-opacity hover:opacity-80"
+          style={{ background: "var(--navy)" }}
         >
           🖨️ Imprimer la plaque
         </button>
-        <p className="text-xs text-gray-400">Conception auteur — plaque fictive à des fins de démonstration</p>
+        <p className="text-xs" style={{ color: "var(--muted)" }}>Conception auteur — plaque fictive à des fins de démonstration</p>
       </div>
     </div>
   );

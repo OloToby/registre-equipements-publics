@@ -20,8 +20,8 @@ interface Marker {
 const MapComponent = dynamic(() => import("./MapComponent"), {
   ssr: false,
   loading: () => (
-    <div className="h-96 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center">
-      <p className="text-sm text-gray-400">Chargement de la carte…</p>
+    <div className="h-96 rounded-2xl flex items-center justify-center" style={{ background: "var(--soft)", border: "1px solid var(--line)" }}>
+      <p className="text-sm" style={{ color: "var(--muted)" }}>Chargement de la carte…</p>
     </div>
   ),
 });

@@ -45,9 +45,9 @@ export default function SignalementQueue({ signalements }: Props) {
 
   if (signalements.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
+      <div className="rounded-2xl p-8 text-center" style={{ background: "var(--surface)", border: "1px solid var(--line)" }}>
         <p className="text-3xl mb-2">✅</p>
-        <p className="text-sm font-medium text-gray-700">Aucun signalement en attente</p>
+        <p className="text-sm font-semibold" style={{ color: "var(--ink)" }}>Aucun signalement en attente</p>
       </div>
     );
   }
@@ -56,39 +56,46 @@ export default function SignalementQueue({ signalements }: Props) {
     <div className="space-y-2">
       {signalements.map((s) => {
         const statut = localStatuts[s.id] ?? s.statut;
-        const prioriteColor = s.priorite === "P1"
-          ? "border-l-4 border-red-500"
-          : s.priorite === "P2" ? "border-l-4 border-amber-400"
-          : "border-l-4 border-gray-200";
+        const leftBorderColor =
+          s.priorite === "P1" ? "var(--bad)" :
+          s.priorite === "P2" ? "var(--warn)" :
+          "var(--line)";
 
         return (
-          <div key={s.id} className={`bg-white rounded-2xl border border-gray-100 ${prioriteColor} p-4`}>
+          <div key={s.id} className="rounded-2xl p-4"
+               style={{ background: "var(--surface)", border: "1px solid var(--line)", borderLeft: `4px solid ${leftBorderColor}` }}>
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <p className="font-mono text-xs text-gray-400">{s.numero}</p>
-                <p className="font-semibold text-gray-900 text-sm mt-0.5">{s.panneLibelle}</p>
-                <p className="text-xs text-gray-500 truncate">{s.ouvrageNom}</p>
+                <p className="font-mono text-xs" style={{ color: "var(--muted)" }}>{s.numero}</p>
+                <p className="font-bold text-sm mt-0.5" style={{ color: "var(--ink)" }}>{s.panneLibelle}</p>
+                <p className="text-xs truncate mt-0.5" style={{ color: "var(--muted)" }}>{s.ouvrageNom}</p>
               </div>
               <div className="text-right shrink-0 space-y-1">
-                <span className={`text-xs px-2 py-0.5 rounded-full ${
-                  s.priorite === "P1" ? "bg-red-100 text-red-700 font-bold" :
-                  s.priorite === "P2" ? "bg-amber-100 text-amber-700" :
-                  "bg-gray-100 text-gray-500"
-                }`}>{s.priorite}</span>
-                <p className="text-xs text-gray-400">{STATUT_LABELS[statut] ?? statut}</p>
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                      style={{
+                        background: s.priorite === "P1" ? "var(--bad-bg)" :
+                                    s.priorite === "P2" ? "var(--warn-bg)" : "var(--soft)",
+                        color: s.priorite === "P1" ? "var(--bad)" :
+                               s.priorite === "P2" ? "var(--warn)" : "var(--muted)",
+                      }}>
+                  {s.priorite}
+                </span>
+                <p className="text-xs" style={{ color: "var(--muted)" }}>{STATUT_LABELS[statut] ?? statut}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 mt-3">
               <Link
                 href={`/commune/signalement/${s.id}`}
-                className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg transition-colors"
+                className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80"
+                style={{ background: "var(--soft)", color: "var(--ink)", border: "1px solid var(--line)" }}
               >
                 Voir
               </Link>
               {statut === "RECU" && (
                 <button
                   onClick={() => passToTriage(s.id)}
-                  className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-colors"
+                  className="text-xs font-bold px-3 py-1.5 rounded-lg text-white transition-opacity hover:opacity-80"
+                  style={{ background: "var(--navy)" }}
                 >
                   Prendre en triage
                 </button>

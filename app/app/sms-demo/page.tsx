@@ -53,35 +53,37 @@ export default function SmsDemoPage() {
   return (
     <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-gray-900">Simulateur SMS</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Simule la réception d'un SMS depuis un habitant. Format : <code className="bg-gray-100 px-1 rounded">[CODE_OUVRAGE] [description]</code>
+        <h1 className="text-xl font-bold" style={{ color: "var(--navy)" }}>Simulateur SMS</h1>
+        <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
+          Simule la réception d'un SMS depuis un habitant. Format : <code className="px-1 rounded font-mono" style={{ background: "var(--soft)", color: "var(--ink)" }}>[CODE_OUVRAGE] [description]</code>
         </p>
-        <p className="text-xs text-amber-700 bg-amber-50 px-3 py-2 rounded-lg mt-2 border border-amber-100">
+        <p className="text-xs px-3 py-2 rounded-lg mt-2" style={{ background: "var(--warn-bg)", border: "1px solid #E0C570", color: "var(--warn)" }}>
           Conception auteur — les SMS ne sont pas réellement envoyés, ils sont loggés en console et créent un vrai signalement en BDD.
         </p>
       </div>
 
       {/* Composer */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-gray-700">Composer un SMS</h2>
+      <div className="rounded-2xl p-5 space-y-4" style={{ background: "var(--surface)", border: "1px solid var(--line)" }}>
+        <h2 className="text-sm font-semibold" style={{ color: "var(--ink)" }}>Composer un SMS</h2>
 
         <div>
-          <label className="block text-xs text-gray-500 mb-1">Numéro expéditeur</label>
+          <label className="block text-xs mb-1" style={{ color: "var(--muted)" }}>Numéro expéditeur</label>
           <input
             value={from}
             onChange={(e) => setFrom(e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono"
+            className="w-full rounded-lg px-3 py-2 text-sm font-mono focus:outline-none"
+            style={{ border: "1px solid var(--line)", color: "var(--ink)", background: "var(--bg)" }}
           />
         </div>
 
         <div>
-          <label className="block text-xs text-gray-500 mb-1">Message</label>
+          <label className="block text-xs mb-1" style={{ color: "var(--muted)" }}>Message</label>
           <input
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="EAU-004 pas d'eau"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono"
+            className="w-full rounded-lg px-3 py-2 text-sm font-mono focus:outline-none"
+            style={{ border: "1px solid var(--line)", color: "var(--ink)", background: "var(--bg)" }}
           />
         </div>
 
@@ -90,7 +92,8 @@ export default function SmsDemoPage() {
             <button
               key={msg}
               onClick={() => setText(msg)}
-              className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 rounded-lg transition-colors"
+              className="text-xs px-2 py-1 rounded-lg transition-opacity hover:opacity-80"
+              style={{ background: "var(--soft)", color: "var(--ink)", border: "1px solid var(--line)" }}
             >
               {msg}
             </button>
@@ -100,13 +103,16 @@ export default function SmsDemoPage() {
         <button
           onClick={send}
           disabled={sending || !text}
-          className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-semibold py-3 rounded-xl text-sm transition-colors"
+          className="w-full font-semibold py-3 rounded-xl text-sm transition-opacity hover:opacity-90 disabled:opacity-50 text-white"
+          style={{ background: "var(--ok)" }}
         >
           {sending ? "Envoi…" : "📱 Envoyer le SMS simulé"}
         </button>
 
         {result && (
-          <div className={`rounded-xl p-4 text-sm ${result.ok ? "bg-green-50 border border-green-200 text-green-800" : "bg-red-50 border border-red-200 text-red-800"}`}>
+          <div className="rounded-xl p-4 text-sm" style={result.ok
+            ? { background: "var(--ok-bg)", border: "1px solid #A3D9BC", color: "var(--ok)" }
+            : { background: "var(--bad-bg)", border: "1px solid #EBADA8", color: "var(--bad)" }}>
             {result.ok ? (
               <p>✅ Signalement <strong className="font-mono">{result.numero}</strong> créé avec succès</p>
             ) : (
@@ -117,32 +123,32 @@ export default function SmsDemoPage() {
       </div>
 
       {/* Boîte de réception */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-5">
+      <div className="rounded-2xl p-5" style={{ background: "var(--surface)", border: "1px solid var(--line)" }}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-gray-700">Boîte de réception simulée ({inbox.length})</h2>
-          <button onClick={loadInbox} className="text-xs text-blue-600 hover:underline">Actualiser</button>
+          <h2 className="text-sm font-semibold" style={{ color: "var(--ink)" }}>Boîte de réception simulée ({inbox.length})</h2>
+          <button onClick={loadInbox} className="text-xs hover:underline" style={{ color: "var(--navy)" }}>Actualiser</button>
         </div>
 
         {inbox.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-4">Aucun SMS reçu pour l'instant</p>
+          <p className="text-sm text-center py-4" style={{ color: "var(--muted)" }}>Aucun SMS reçu pour l'instant</p>
         ) : (
           <div className="space-y-3">
             {[...inbox].reverse().map((sms, i) => (
-              <div key={i} className="flex gap-3 bg-gray-50 rounded-xl p-3">
+              <div key={i} className="flex gap-3 rounded-xl p-3" style={{ background: "var(--soft)", border: "1px solid var(--line)" }}>
                 <div className="text-lg">📱</div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-mono text-gray-600">{sms.from}</span>
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs font-mono" style={{ color: "var(--ink)" }}>{sms.from}</span>
+                    <span className="text-xs" style={{ color: "var(--muted)" }}>
                       {new Date(sms.receivedAt).toLocaleTimeString("fr-FR")}
                     </span>
                     {sms.signalementId && (
-                      <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
+                      <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: "var(--ok-bg)", color: "var(--ok)" }}>
                         Signalement créé
                       </span>
                     )}
                   </div>
-                  <p className="text-sm font-mono text-gray-800 mt-0.5">{sms.body}</p>
+                  <p className="text-sm font-mono mt-0.5" style={{ color: "var(--ink)" }}>{sms.body}</p>
                 </div>
               </div>
             ))}
